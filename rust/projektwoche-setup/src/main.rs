@@ -1,132 +1,110 @@
+mod config;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{exit, Command, Stdio};
-use std::thread;
-use std::time::Duration;
 use clap::{Parser, Subcommand};
 use confy::ConfyError;
-
-// A simple utility to get the user's home directory.
-fn get_home_dir() -> PathBuf {
-    dirs::home_dir().expect("Home directory not found")
-}
-
-// Structs for system and configuration management.
-// `confy` crate automatically handles loading and saving this struct.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum OS {
-    Linux,
-    Windows,
-    Mac,
-}
-
-impl Default for OS {
-    fn default() -> Self {
-        detect_os()
-    }
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum Arch {
-    X86,
-    X86_64,
-    Arm64,
-}
-
-impl Default for Arch {
-    fn default() -> Self {
-        detect_arch()
-    }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-struct Machine {
-    #[serde(default)]
-    os: OS,
-    #[serde(default)]
-    arch: Arch,
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-struct Config {
-    #[serde(default)]
-    machine: Machine,
-}
-
-// Scan the OS and architecture of the system.
-fn detect_system() -> Machine {
-    let os = detect_os();
-    let arch = detect_arch();
-    Machine { os, arch }
-}
-
-fn detect_os() -> OS {
-    if cfg!(target_os = "linux") {
-        OS::Linux
-    } else if cfg!(target_os = "windows") {
-        OS::Windows
-    } else if cfg!(target_os = "macos") {
-        OS::Mac
-    } else {
-        OS::Linux // Default fallback
-    }
-}
-
-fn detect_arch() -> Arch {
-    match env::consts::ARCH {
-        "x86" => Arch::X86,
-        "x86_64" => Arch::X86_64,
-        "aarch64" => Arch::Arm64,
-        _ => Arch::X86_64, // Default fallback
-    }
-}
-
-fn check_get_create_config() -> Result<Config, Box<dyn std::error::Error>> {
-    let config: Result<Config, ConfyError> = confy::load("prowo-setup", "config")
-    match config {
-        Ok(config) => Ok(config),
-        Err(e) => {
-            eprintln!("Unbekannter Fehler beim Laden der Konfiguration: {}", e)
-            exit(1)
-        }
-    }
-}
+use os_info::get;
 
 // Program and Package Manager logic
-#[derive(Debug)]
+/**
+ * how id do it in ts:
+ *
+ * ```typescript
+ * // multiples of runnerArgs because for diferent OS and Arch
+ * type runnerArgs = {
+ *   os: OS[],
+ *   arch: Arch[],
+ *   commands: {
+ *     descriptor: string,
+ *     command: string[],
+ *   };
+ *
+ * interface Program {
+ *   name: string;
+ *   commands: {
+ *     install: runnerArgs[];
+ *     uninstall: runnerArgs[];
+ *   };
+ *  configFunc?: (machine: Machine) => Promise<void>;
+ * }
+ * ```
+ */
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct ExecutableCommand {
+    descriptor: &'static str,
+    command: &'static [&'static str],
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct InstallationInstructions {
+  install: Vec<ExecutableCommand>,
+  uninstall: Vec<ExecutableCommand>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct OSCommandMapping {
+    commands: InstallationInstructions,
+    config_func: Option<fn(&config::Machine) -> Result<(), Box<dyn std::error::Error>>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Program {
     name: &'static str,
-    install_commands: HashMap<OS, &'static [&'static str]>,
-    config_func: Option<fn(&Machine) -> Result<(), Box<dyn std::error::Error>>>,
+    description: &'static str,
+    mapping: HashMap<config::OS, OSCommandMapping>,
 }
 
 impl Program {
-    fn new(name: &'static str) -> Self {
+    fn new(name: &'static str, description: &'static str) -> Self {
         Self {
             name,
-            install_commands: HashMap::new(),
-            config_func: None,
+            description,
+            mapping: HashMap::new(),
         }
     }
 
-    fn add_install_command(mut self, os: OS, commands: &'static [&'static str]) -> Self {
-        self.install_commands.insert(os, commands);
+    fn add_os(mut self, os: config::OS_Category) -> Self {
+      let os_list = config::OS_Matcher::from_category(os);
+        for os_type in os_list.get_list() {
+            self.mapping.insert(*os_type, OSCommandMapping {
+                commands: InstallationInstructions {
+                    install: Vec::new(),
+                    uninstall: Vec::new(),
+                },
+                config_func: None,
+            });
+        }
         self
     }
 
-    fn add_config_func(
-        mut self,
-        func: fn(&Machine) -> Result<(), Box<dyn std::error::Error>>,
-    ) -> Self {
-        self.config_func = Some(func);
-        self
-    }
+    // fn add_install_command(mut self, os: config::OS, commands: &'static [&'static str]) -> Self {
+    //     self.mapping.insert(os, OSCommandMapping {
+    //         commands: InstallationInstructions {
+    //             install: commands.iter().map(|&cmd| ExecutableCommand {
+    //                 descriptor: cmd,
+    //                 command: cmd.split_whitespace().collect(),
+    //             }).collect(),
+    //             uninstall: Vec::new(),
+    //         },
+    //         config_func: None,
+    //     });
+    //     self
+    // }
+
+    // fn add_config_func(
+    //     mut self,
+    //     func: fn(&Machine) -> Result<(), Box<dyn std::error::Error>>,
+    // ) -> Self {
+    //     self.config_func = Some(func);
+    //     self
+    // }
 }
 
 // Installation function for all programs
@@ -138,7 +116,7 @@ fn install_programs(
     for program in programs {
         println!("==> Installing program: {}", program.name);
 
-        if let Some(commands) = program.install_commands.get(&config.machine.os) {
+        if let Some(commands) = program.install_commands.get(&config.machine.kernel) {
             for cmd_str in *commands {
                 if dry_run {
                     println!("  [DRY-RUN] Would execute: {}", cmd_str);
@@ -153,7 +131,7 @@ fn install_programs(
                 let program_name = parts[0];
                 let args = &parts[1..];
 
-                let mut child = Command::new(program_name)
+                let mut child = ExecutableCommand::new(program_name)
                     .args(args)
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
@@ -171,7 +149,7 @@ fn install_programs(
         } else {
             println!(
                 "  No installation commands found for OS: {:?} for program {}",
-                config.machine.os, program.name
+                config.machine.kernel, program.name
             );
         }
 
@@ -239,13 +217,13 @@ fn main() {
     let programs_to_manage = [
         &Program::new("Node")
             .add_install_command(
-                OS::Linux,
+                Kernel::Linux,
                 &["sudo apt-get update", "sudo apt-get install -y nodejs"],
             )
-            .add_install_command(OS::Mac, &["brew install node"]),
+            .add_install_command(Kernel::Mac, &["brew install node"]),
         &Program::new("VSCode")
             .add_install_command(
-                OS::Linux,
+                Kernel::Linux,
                 &[
                     "sudo apt-get update",
                     "sudo apt-get install -y wget apt-transport-https",
@@ -255,14 +233,14 @@ fn main() {
                     "sudo apt-get install -y code",
                 ],
             )
-            .add_install_command(OS::Mac, &["brew install visual-studio-code"])
+            .add_install_command(Kernel::Mac, &["brew install visual-studio-code"])
             .add_config_func(configure_vscode),
         &Program::new("Bun")
-            .add_install_command(OS::Linux, &["curl -fsSL https://bun.sh/install | bash"])
-            .add_install_command(OS::Mac, &["curl -fsSL https://bun.sh/install | bash"]),
+            .add_install_command(Kernel::Linux, &["curl -fsSL https://bun.sh/install | bash"])
+            .add_install_command(Kernel::Mac, &["curl -fsSL https://bun.sh/install | bash"]),
         &Program::new("npm")
-            .add_install_command(OS::Linux, &["sudo apt-get update", "sudo apt-get install -y npm"])
-            .add_install_command(OS::Mac, &["brew install npm"]),
+            .add_install_command(Kernel::Linux, &["sudo apt-get update", "sudo apt-get install -y npm"])
+            .add_install_command(Kernel::Mac, &["brew install npm"]),
     ];
 
     match check_get_create_config() {
