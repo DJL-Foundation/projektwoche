@@ -31,45 +31,55 @@ impl Default for OS {
     }
 }
 
-pub enum OS_Category {
+pub enum OsCategory {
   Windows,
   LinuxBased,
   MacOS,
   ArchBased,
   RHELBased,
   DebianBased,
-  PacmanBased,
   GentooBased,
   AndroidBased,
 }
 
-pub struct OS_Matcher {
-    os_list: &'static [OS],
+pub enum OsSelector {
+  OS(OS),
+  OsCategory(OsCategory),
 }
-impl OS_Matcher {
-    pub fn new(os_list: &'static [OS]) -> Self {
-        Self { os_list }
+
+pub struct OsMatcher {
+    os_list: Vec<OS>,
+}
+impl OsMatcher {
+    pub fn new(os_list: &[OS]) -> Self {
+        Self { os_list: os_list.to_vec() }
     }
 
     pub fn matches(&self, os: &OS) -> bool {
         self.os_list.iter().any(|o| o.0 == os.0)
     }
 
-    pub fn from_category(category: OS_Category) -> Self {
-        match category {
-            OS_Category::Windows => OS_Matcher::new(&WINDOWS_BASED_OS),
-            OS_Category::LinuxBased => OS_Matcher::new(&LINUX_BASED_OS),
-            OS_Category::MacOS => OS_Matcher::new(&MAC_BASED_OS),
-            OS_Category::ArchBased => OS_Matcher::new(&ARCH_BASED_OS),
-            OS_Category::RHELBased => OS_Matcher::new(&RHEL_BASED_OS),
-            OS_Category::DebianBased => OS_Matcher::new(&DEBIAN_BASED_OS),
-            OS_Category::PacmanBased => OS_Matcher::new(&PACMAN_BASED_OS),
-            OS_Category::GentooBased => OS_Matcher::new(&GENTOO_BASED_OS),
-            OS_Category::AndroidBased => OS_Matcher::new(&ANDROID_BASED_OS),
+    pub fn from_selector(selector: OsSelector) -> Self {
+        match selector {
+            OsSelector::OS(os) => OsMatcher::new(&[os]),
+            OsSelector::OsCategory(category) => OsMatcher::from_category(category),
         }
     }
-    pub fn get_list(&self) -> &'static [OS] {
-        self.os_list
+
+    pub fn from_category(category: OsCategory) -> Self {
+        match category {
+            OsCategory::Windows => OsMatcher::new(&WINDOWS_BASED_OS),
+            OsCategory::LinuxBased => OsMatcher::new(&LINUX_BASED_OS),
+            OsCategory::MacOS => OsMatcher::new(&MAC_BASED_OS),
+            OsCategory::ArchBased => OsMatcher::new(&ARCH_BASED_OS),
+            OsCategory::RHELBased => OsMatcher::new(&RHEL_BASED_OS),
+            OsCategory::DebianBased => OsMatcher::new(&DEBIAN_BASED_OS),
+            OsCategory::GentooBased => OsMatcher::new(&GENTOO_BASED_OS),
+            OsCategory::AndroidBased => OsMatcher::new(&ANDROID_BASED_OS),
+        }
+    }
+    pub fn get_list(&self) -> &[OS] {
+        &self.os_list
     }
 }
 
@@ -146,15 +156,6 @@ pub const DEBIAN_BASED_OS: &[OS] = &[
   OS(os_info::Type::Raspbian),
 ];
 
-pub const PACMAN_BASED_OS: &[OS] = &[
-  OS(os_info::Type::Arch),
-  OS(os_info::Type::Artix),
-  OS(os_info::Type::EndeavourOS),
-  OS(os_info::Type::Garuda),
-  OS(os_info::Type::Manjaro),
-  OS(os_info::Type::CachyOS),
-];
-
 pub const GENTOO_BASED_OS: &[OS] = &[
   OS(os_info::Type::Gentoo),
 ];
@@ -167,15 +168,15 @@ pub const ANDROID_BASED_OS: &[OS] = &[
 #[serde(rename_all = "camelCase")]
 pub struct Machine {
     #[serde(default)]
-    os: OS,
+    pub(crate) os: OS,
     #[serde(default)]
-    arch: Architectures,
+    pub(crate) arch: Architectures,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
-    machine: Machine,
+    pub(crate) machine: Machine,
 }
 
 
