@@ -1,40 +1,9 @@
 mod config;
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::env;
-use std::fs;
 use std::io::{self, Write};
-use std::path::PathBuf;
-use std::process::{exit, Command, Stdio};
+use std::process::{Command, Stdio};
 use clap::{Parser, Subcommand};
-use confy::ConfyError;
-use os_info::get;
-
-// Program and Package Manager logic
-/**
- * how id do it in ts:
- *
- * ```typescript
- * // multiples of runnerArgs because for diferent OS and Arch
- * type runnerArgs = {
- *   os: OS[],
- *   arch: Arch[],
- *   commands: {
- *     descriptor: string,
- *     command: string[],
- *   };
- *
- * interface Program {
- *   name: string;
- *   commands: {
- *     install: runnerArgs[];
- *     uninstall: runnerArgs[];
- *   };
- *  configFunc?: (machine: Machine) => Promise<void>;
- * }
- * ```
- */
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct ExecutableCommand {
@@ -42,26 +11,112 @@ struct ExecutableCommand {
     command: &'static [&'static str],
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct InstallationInstructions {
-  install: Vec<ExecutableCommand>,
-  uninstall: Vec<ExecutableCommand>,
+impl ExecutableCommand {
+    fn new(descriptor: &'static str, command: &'static [&'static str]) -> Self {
+        Self { descriptor, command }
+    }
+
+    fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
+        for cmd in self.command {
+            let parts: Vec<&str> = cmd.split_whitespace().collect();
+            if parts.is_empty() {
+          continue;
+            }
+            let program_name = parts[0];
+            let args = &parts[1..];
+
+            let child = Command::new(program_name)
+          .args(args)
+          .stdout(Stdio::piped())
+          .stderr(Stdio::piped())
+          .spawn()?;
+
+            let output = child.wait_with_output()?;
+
+            if output.status.success() {
+          println!("Command '{}' executed successfully.", cmd);
+            } else {
+          eprintln!(
+              "Command '{}' failed with status: {:?}",
+              cmd,
+              output.status.code()
+          );
+          io::stderr().write_all(&output.stderr)?;
+          return Err(format!("Command '{}' failed.", cmd).into());
+            }
+        }
+        Ok(())
+    }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct InstructionSet<T> {
+    install: Vec<T>,
+    uninstall: Vec<T>,
+}
+
+impl<T> InstructionSet<T> {
+    fn new() -> Self {
+        Self {
+            install: Vec::new(),
+            uninstall: Vec::new(),
+        }
+    }
+}
+
+type InstallationInstructions = InstructionSet<ExecutableCommand>;
+
+type ConfigurationFunction = fn() -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+
+type ConfigurationInstructions = InstructionSet<ConfigurationFunction>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct OSCommandMapping {
+    program: &'static str, // For "Installing Node.js..."
     commands: InstallationInstructions,
-    config_func: Option<fn(&config::Machine) -> Result<(), Box<dyn std::error::Error>>>,
+    config_func: ConfigurationInstructions,
+}
+
+impl OSCommandMapping {
+   fn new(program: &Package) -> Self {
+        Self {
+            program: program.name,
+            commands: InstallationInstructions::new(),
+            config_func: ConfigurationInstructions::new(),
+        }
+    }
+
+    fn add_install_commands(&mut self, commands: Vec<ExecutableCommand>) {
+        self.commands.install.extend(commands);
+    }
+
+    fn add_uninstall_commands(&mut self, commands: Vec<ExecutableCommand>) {
+        self.commands.uninstall.extend(commands);
+    }
+
+    fn add_config_creator(
+        &mut self,
+        config_func: ConfigurationFunction,
+    ) {
+        self.config_func.install.push(config_func);
+    }
+
+    fn add_config_remover(
+        &mut self,
+        config_func: ConfigurationFunction,
+    ) {
+        self.config_func.uninstall.push(config_func);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct Program {
+struct Package {
     name: &'static str,
     description: &'static str,
     mapping: HashMap<config::OS, OSCommandMapping>,
 }
 
-impl Program {
+impl Package {
     fn new(name: &'static str, description: &'static str) -> Self {
         Self {
             name,
@@ -70,122 +125,143 @@ impl Program {
         }
     }
 
-    fn add_os(mut self, os: config::OS_Category) -> Self {
-      let os_list = config::OS_Matcher::from_category(os);
-        for os_type in os_list.get_list() {
-            self.mapping.insert(*os_type, OSCommandMapping {
-                commands: InstallationInstructions {
-                    install: Vec::new(),
-                    uninstall: Vec::new(),
-                },
-                config_func: None,
-            });
+    fn add_mapping(
+        mut self,
+        os: config::OsMatcher,
+        mapping: OSCommandMapping,
+    ) -> Self {
+      for os_type in os.get_list() {
+          self.mapping.insert(*os_type, mapping.clone());
+      }
+      self
+    }
+}
+
+struct SoftwareBundle {
+    name: &'static str,
+    description: &'static str,
+    programs: Vec<Package>,
+}
+
+impl SoftwareBundle {
+    fn new(name: &'static str, description: &'static str) -> Self {
+        Self {
+            name,
+            description,
+            programs: Vec::new(),
         }
+    }
+
+    fn add_program(mut self, program: Package) -> Self {
+        self.programs.push(program);
         self
     }
 
-    // fn add_install_command(mut self, os: config::OS, commands: &'static [&'static str]) -> Self {
-    //     self.mapping.insert(os, OSCommandMapping {
-    //         commands: InstallationInstructions {
-    //             install: commands.iter().map(|&cmd| ExecutableCommand {
-    //                 descriptor: cmd,
-    //                 command: cmd.split_whitespace().collect(),
-    //             }).collect(),
-    //             uninstall: Vec::new(),
-    //         },
-    //         config_func: None,
-    //     });
-    //     self
-    // }
+    fn installer_thread(program: &Package, os: &config::OS, dry_run: bool) {
+      println!("==> Installing program: {}", program.name); // i want multiple windows in the ui but i i just use println! the multithread will just stack over each other
+      let commands = program.mapping.get(os).expect(&format!("No installation commands found for OS: {:?}", os));
 
-    // fn add_config_func(
-    //     mut self,
-    //     func: fn(&Machine) -> Result<(), Box<dyn std::error::Error>>,
-    // ) -> Self {
-    //     self.config_func = Some(func);
-    //     self
-    // }
-}
-
-// Installation function for all programs
-fn install_programs(
-    programs: &[&Program],
-    config: &Config,
-    dry_run: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-    for program in programs {
-        println!("==> Installing program: {}", program.name);
-
-        if let Some(commands) = program.install_commands.get(&config.machine.kernel) {
-            for cmd_str in *commands {
-                if dry_run {
-                    println!("  [DRY-RUN] Would execute: {}", cmd_str);
-                    continue;
-                }
-
-                println!("  Executing: {}", cmd_str);
-                let parts: Vec<&str> = cmd_str.split_whitespace().collect();
-                if parts.is_empty() {
-                    continue;
-                }
-                let program_name = parts[0];
-                let args = &parts[1..];
-
-                let mut child = ExecutableCommand::new(program_name)
-                    .args(args)
-                    .stdout(Stdio::piped())
-                    .stderr(Stdio::piped())
-                    .spawn()?;
-
-                let output = child.wait_with_output()?;
-
-                if output.status.success() {
-                    println!("  Command successful.");
-                } else {
-                    eprintln!("  Command failed with status: {:?}", output.status.code());
-                    io::stderr().write_all(&output.stderr)?;
-                }
-            }
-        } else {
-            println!(
-                "  No installation commands found for OS: {:?} for program {}",
-                config.machine.kernel, program.name
-            );
+      for instruction in &commands.commands.install {
+        println!("  Executing: {}", instruction.command.join(" "));
+        if dry_run {
+            println!("  [DRY-RUN] Would execute: {}", instruction.command.join(" "));
+            continue;
         }
 
-        if let Some(config_func) = program.config_func {
-            println!("  Applying configuration for {}", program.name);
+        if let Err(e) = instruction.run() {
+            eprintln!("  Command failed: {}", e);
+            return;
+        }
+        println!("  Command executed successfully.");
+      }
+    }
+
+    fn installer(&self, os: &config::OS, dry_run: bool) -> Result<(), Box<dyn std::error::Error>> {
+      let mut handles = vec![];
+
+      for program in &self.programs {
+          let os = os.clone();
+          let program = program.clone();
+          let handle = std::thread::spawn(move || {
+        Self::installer_thread(&program, &os, dry_run);
+          });
+          handles.push(handle);
+      }
+
+      for handle in handles {
+          if let Err(e) = handle.join() {
+        eprintln!("Thread panicked: {:?}", e);
+          }
+      }
+
+      Ok(())
+    }
+
+    fn configurator_thread(
+        program: &Package,
+        os: &config::OS,
+        dry_run: bool,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        println!("==> Configuring program: {}", program.name);
+        let commands = program.mapping.get(os).expect(&format!("No configuration commands found for OS: {:?}", os));
+
+        for instruction in &commands.config_func.install {
             if dry_run {
-                println!("  [DRY-RUN] Would apply configuration.");
-            } else {
-                config_func(&config.machine)?;
+                println!("  [DRY-RUN] Would apply configuration for {}", program.name);
+                continue;
             }
+            if let Err(e) = instruction() {
+                eprintln!("  Configuration failed: {}", e);
+                return Err(e);
+            }
+            println!("  Configuration applied successfully.");
         }
-    }
-    Ok(())
-}
-
-// Example configuration function for VSCode.
-fn configure_vscode(_: &Machine) -> Result<(), Box<dyn std::error::Error>> {
-    let settings_dir = get_home_dir().join(".config/Code/User"); // Linux path
-    // You can add more logic here to check the OS and adapt the path.
-    // e.g., on Windows: `%APPDATA%\Code\User` or on macOS: `~/Library/Application Support/Code/User`
-    let settings_file = settings_dir.join("settings.json");
-
-    if !settings_dir.exists() {
-        fs::create_dir_all(&settings_dir)?;
+        Ok(())
     }
 
-    let vscode_settings = r#"{
-    "workbench.colorTheme": "Default Dark+",
-    "editor.fontSize": 14,
-    "editor.renderWhitespace": "all",
-    "terminal.integrated.shell.linux": "/bin/bash"
-}"#;
+    fn configurator(
+      &self,
+      os: &config::OS,
+      dry_run: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+      let mut handles = vec![];
 
-    fs::write(&settings_file, vscode_settings)?;
-    println!("    VSCode configuration file updated at: {:?}", settings_file);
-    Ok(())
+      for program in &self.programs {
+        if let Some(commands) = program.mapping.get(os) {
+          if commands.config_func.install.is_empty() {
+            println!("No configuration functions for program: {}", program.name);
+            continue;
+          }
+
+          let os = os.clone();
+          let program = program.clone();
+          let handle = std::thread::spawn(move || {
+            Self::configurator_thread(&program, &os, dry_run)
+          });
+          handles.push(handle);
+        } else {
+          println!("No configuration mapping found for program: {}", program.name);
+        }
+      }
+
+      for handle in handles {
+        if let Err(e) = handle.join() {
+          eprintln!("Thread panicked: {:?}", e);
+        }
+      }
+
+      Ok(())
+    }
+
+    fn install(
+        &self,
+        os: &config::OS,
+        dry_run: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.installer(os, dry_run)?;
+        self.configurator(os, dry_run)?;
+        Ok(())
+    }
 }
 
 // Define the CLI application and its subcommands using `clap`.
@@ -213,37 +289,9 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
-    // Define the programs to be managed. This is where you add new programs.
-    let programs_to_manage = [
-        &Program::new("Node")
-            .add_install_command(
-                Kernel::Linux,
-                &["sudo apt-get update", "sudo apt-get install -y nodejs"],
-            )
-            .add_install_command(Kernel::Mac, &["brew install node"]),
-        &Program::new("VSCode")
-            .add_install_command(
-                Kernel::Linux,
-                &[
-                    "sudo apt-get update",
-                    "sudo apt-get install -y wget apt-transport-https",
-                    "wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -",
-                    "sudo add-apt-repository 'deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main'",
-                    "sudo apt-get update",
-                    "sudo apt-get install -y code",
-                ],
-            )
-            .add_install_command(Kernel::Mac, &["brew install visual-studio-code"])
-            .add_config_func(configure_vscode),
-        &Program::new("Bun")
-            .add_install_command(Kernel::Linux, &["curl -fsSL https://bun.sh/install | bash"])
-            .add_install_command(Kernel::Mac, &["curl -fsSL https://bun.sh/install | bash"]),
-        &Program::new("npm")
-            .add_install_command(Kernel::Linux, &["sudo apt-get update", "sudo apt-get install -y npm"])
-            .add_install_command(Kernel::Mac, &["brew install npm"]),
-    ];
+    let projektwochen_bundle = SoftwareBundle::new("Projektwochen", "A bundle for the Projektwochen");
 
-    match check_get_create_config() {
+    match config::use_config() {
         Ok(config) => {
             println!("Verwende Konfiguration: {:?}", config.machine);
             match &cli.command {
@@ -254,7 +302,7 @@ fn main() {
                         println!("==> INSTALLATION");
                     }
 
-                    if let Err(e) = install_programs(&programs_to_manage, &config, *debug) {
+                    if let Err(e) = projektwochen_bundle.install(&config.machine.os, *debug) {
                         eprintln!("Fehler bei der Installation: {}", e);
                     }
                     println!("==> Installation abgeschlossen.");
