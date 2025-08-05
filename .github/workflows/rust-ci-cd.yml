@@ -1,0 +1,417 @@
+name: 🚀 Cross-Platform Integration Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Build all Rust projects
+  build:
+    name: 🔧 Build Rust Projects
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-pc-windows-gnu
+          - x86_64-unknown-linux-gnu
+          - x86_64-apple-darwin
+        project:
+          - name: "projektwoche-setup"
+            path: "rust/projektwoche-setup"
+            binary: "projektwoche-setup"
+          - name: "ratatui-test-json"
+            path: "rust/ratatui-test-json"
+            binary: "ratatui-test-json"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: 🔧 Install cross-compilation dependencies
+        if: matrix.target == 'x86_64-pc-windows-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: 💾 Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ matrix.project.name }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: ⚡ Build binary
+        run: |
+          cd ${{ matrix.project.path }}
+          cargo build --release --target ${{ matrix.target }} --bin ${{ matrix.project.binary }}
+
+      - name: 📦 Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.project.name }}-${{ matrix.target }}
+          path: |
+            rust/target/${{ matrix.target }}/release/${{ matrix.project.binary }}*
+          retention-days: 2
+
+  # Run cargo tests for all projects except projektwoche-setup
+  test-rust:
+    name: 🧪 Rust Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - name: "ratatui-test-json"
+            path: "rust/ratatui-test-json"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 💾 Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: ${{ runner.os }}-cargo-test-${{ matrix.project.name }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: 🧪 Run tests
+        run: |
+          cargo test --bin ${{ matrix.project.name }}
+
+  # Test projektwoche-setup on Windows with actual installations
+  test-windows:
+    name: 🪟 Windows Integration Test
+    needs: build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-scenario:
+          - name: "🛠️ Basic Dev Tools"
+            packages: "git,nodejs,vscode"
+            verify-commands: |
+              git --version
+              node --version
+              npm --version
+              code --version
+          - name: "🚀 Extended Dev Environment"
+            packages: "git,nodejs,python,docker"
+            verify-commands: |
+              git --version
+              node --version
+              python --version
+              docker --version
+          - name: "⚡ Minimal Setup"
+            packages: "git"
+            verify-commands: |
+              git --version
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-pc-windows-gnu
+          path: ./bin
+      - name: ⚙️ Make binary executable
+        run: |
+          Get-ChildItem -Path "./bin" -Recurse -File | ForEach-Object { $_.FullName }
+          Move-Item "./bin/projektwoche-setup.exe" "./projektwoche-setup.exe" -Force
+        shell: powershell
+
+      - name: 🔍 Test dry-run mode
+        run: |
+          Write-Host "Testing dry-run mode with packages: ${{ matrix.test-scenario.packages }}"
+          ./projektwoche-setup.exe --dry-run --packages "${{ matrix.test-scenario.packages }}"
+        shell: powershell
+
+      - name: 🚀 Run actual installation
+        run: |
+          Write-Host "Running actual installation with packages: ${{ matrix.test-scenario.packages }}"
+          ./projektwoche-setup.exe --packages "${{ matrix.test-scenario.packages }}" --silent
+        shell: powershell
+
+      - name: ⏱️ Wait for installations to complete
+        run: |
+          Write-Host "Waiting 60 seconds for installations to complete..."
+          Start-Sleep -Seconds 60
+        shell: powershell
+
+      - name: 🔄 Refresh environment variables
+        run: |
+          Write-Host "Refreshing environment variables..."
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          Write-Host "Updated PATH: $env:Path"
+        shell: powershell
+
+      - name: ✅ Verify installations
+        run: |
+          Write-Host "Verifying installations for scenario: ${{ matrix.test-scenario.name }}"
+          $commands = @"
+          ${{ matrix.test-scenario.verify-commands }}
+          "@
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          $commands -split "`n" | ForEach-Object {
+            $cmd = $_.Trim()
+            if ($cmd -ne "") {
+              Write-Host "Running: $cmd"
+              try {
+                Invoke-Expression $cmd
+                Write-Host "✓ SUCCESS: $cmd" -ForegroundColor Green
+              } catch {
+                Write-Host "✗ FAILED: $cmd - $($_.Exception.Message)" -ForegroundColor Red
+                exit 1
+              }
+            }
+          }
+        shell: powershell
+      - name: 🗑️ Test uninstallation (if supported)
+        run: |
+          Write-Host "Testing uninstallation..."
+          ./projektwoche-setup.exe --uninstall --packages "${{ matrix.test-scenario.packages }}" --dry-run
+        shell: powershell
+        continue-on-error: true
+
+  # Test projektwoche-setup on Linux with actual installations
+  test-linux:
+    name: 🐧 Linux Integration Test
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-scenario:
+          - name: "🛠️ Basic Dev Tools"
+            packages: "git,nodejs,curl"
+            verify-commands: |
+              git --version
+              node --version
+              curl --version
+          - name: "🐍 Python Development"
+            packages: "git,python3,pip"
+            verify-commands: |
+              git --version
+              python3 --version
+              pip3 --version
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-unknown-linux-gnu
+          path: ./bin
+
+      - name: ⚙️ Make binary executable
+        run: |
+          chmod +x ./bin/projektwoche-setup
+          mv ./bin/projektwoche-setup ./projektwoche-setup
+
+      - name: 🔍 Test dry-run mode
+        run: |
+          echo "Testing dry-run mode with packages: ${{ matrix.test-scenario.packages }}"
+          ./projektwoche-setup --dry-run --packages "${{ matrix.test-scenario.packages }}"
+
+      - name: 🚀 Run actual installation
+        run: |
+          echo "Running actual installation with packages: ${{ matrix.test-scenario.packages }}"
+          ./projektwoche-setup --packages "${{ matrix.test-scenario.packages }}"
+
+      - name: ✅ Verify installations
+        run: |
+          echo "Verifying installations for scenario: ${{ matrix.test-scenario.name }}"
+          echo "${{ matrix.test-scenario.verify-commands }}" | while IFS= read -r cmd; do
+            if [ -n "$cmd" ]; then
+              echo "Running: $cmd"
+              if eval "$cmd"; then
+                echo "✓ SUCCESS: $cmd"
+              else
+                echo "✗ FAILED: $cmd"
+                exit 1
+              fi
+            fi
+          done
+
+  # Test projektwoche-setup on macOS with actual installations
+  test-macos:
+    name: 🍎 macOS Integration Test
+    needs: build
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-scenario:
+          - name: "🍺 Homebrew Tools"
+            packages: "git,node,python"
+            verify-commands: |
+              git --version
+              node --version
+              python3 --version
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download macOS binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-apple-darwin
+          path: ./bin
+
+      - name: ⚙️ Make binary executable
+        run: |
+          chmod +x ./bin/projektwoche-setup
+          mv ./bin/projektwoche-setup ./projektwoche-setup
+
+      - name: 🔍 Test dry-run mode
+        run: |
+          echo "Testing dry-run mode with packages: ${{ matrix.test-scenario.packages }}"
+          ./projektwoche-setup --dry-run --packages "${{ matrix.test-scenario.packages }}"
+
+      - name: 🚀 Run actual installation
+        run: |
+          echo "Running actual installation with packages: ${{ matrix.test-scenario.packages }}"
+          ./projektwoche-setup --packages "${{ matrix.test-scenario.packages }}"
+
+      - name: ✅ Verify installations
+        run: |
+          echo "Verifying installations for scenario: ${{ matrix.test-scenario.name }}"
+          echo "${{ matrix.test-scenario.verify-commands }}" | while IFS= read -r cmd; do
+            if [ -n "$cmd" ]; then
+              echo "Running: $cmd"
+              if eval "$cmd"; then
+                echo "✓ SUCCESS: $cmd"
+              else
+                echo "✗ FAILED: $cmd"
+                exit 1
+              fi
+            fi
+          done
+
+  # Error handling and edge case testing for projektwoche-setup only
+  test-edge-cases:
+    name: 🔍 Edge Case Testing
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-pc-windows-gnu
+          path: ./bin
+
+      - name: ⚙️ Make binary executable
+        run: |
+          Move-Item "./bin/projektwoche-setup.exe" "./projektwoche-setup.exe" -Force
+        shell: powershell
+
+      - name: ❌ Test invalid package names
+        run: |
+          Write-Host "Testing invalid package handling..."
+          ./projektwoche-setup.exe --packages "nonexistent-package-12345" --dry-run
+        shell: powershell
+        continue-on-error: true
+
+      - name: 📝 Test empty package list
+        run: |
+          Write-Host "Testing empty package list..."
+          ./projektwoche-setup.exe --packages "" --dry-run
+        shell: powershell
+        continue-on-error: true
+
+      - name: ❓ Test help command
+        run: |
+          Write-Host "Testing help command..."
+          ./projektwoche-setup.exe --help
+        shell: powershell
+
+      - name: 📋 Test version command
+        run: |
+          Write-Host "Testing version command..."
+          ./projektwoche-setup.exe --version
+        shell: powershell
+        continue-on-error: true
+
+  # Performance and stress testing for projektwoche-setup only
+  test-performance:
+    name: 🚄 Performance Testing
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-unknown-linux-gnu
+          path: ./bin
+      - name: ⚙️ Make binary executable
+        run: |
+          chmod +x ./bin/projektwoche-setup
+          mv ./bin/projektwoche-setup ./projektwoche-setup
+
+      - name: ⚡ Test parallel installation performance
+        run: |
+          echo "Testing parallel installation of multiple packages..."
+          time ./projektwoche-setup --packages "git,curl,wget,vim,nano" --dry-run
+
+      - name: 🧠 Test memory usage
+        run: |
+          echo "Testing memory usage during execution..."
+          /usr/bin/time -v ./projektwoche-setup --packages "git,nodejs" --dry-run
+
+  # Collect results and create summary
+  test-summary:
+    name: 📊 Test Summary
+    needs:
+      [
+        test-rust,
+        test-windows,
+        test-linux,
+        test-macos,
+        test-edge-cases,
+        test-performance,
+      ]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: 📈 Create test summary
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Rust Unit Tests | ${{ needs.test-rust.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows Integration | ${{ needs.test-windows.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux Integration | ${{ needs.test-linux.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS Integration | ${{ needs.test-macos.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Edge Cases | ${{ needs.test-edge-cases.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance | ${{ needs.test-performance.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.test-rust.result }}" == "success" && "${{ needs.test-windows.result }}" == "success" && "${{ needs.test-linux.result }}" == "success" && "${{ needs.test-macos.result }}" == "success" ]]; then
+            echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed. Check individual job logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
