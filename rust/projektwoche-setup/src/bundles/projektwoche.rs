@@ -1,11 +1,11 @@
 use crate::config::{OsCategory, OsMatcher};
 
-use crate::manager::{ExecutableCommand, OSCommandMapping, Package, SoftwareBundle};
+use crate::manager::{InstructionMapping, Package, SoftwareBundle};
 
 fn nodejs() -> Package {
   Package::new("Node.js", "JavaScript runtime").add_mapping(
     OsMatcher::from_category(OsCategory::Windows),
-    OSCommandMapping::new().add_install_commands(vec![
+    InstructionMapping::new().add_install_instructions(vec![
       ExecutableCommand::new(
         "Install nvm",
         &["wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"],
