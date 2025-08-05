@@ -1,4 +1,4 @@
-mod instructions;
+pub mod instructions;
 
 use crate::config;
 use crate::manager::instructions::AnyInstruction;
@@ -41,23 +41,38 @@ impl InstructionMapping {
     }
   }
 
-  pub(crate) fn add_install_instructions(mut self, instructions: Vec<instructions::Instructions>) -> Self {
+  pub(crate) fn add_install_instructions(
+    mut self,
+    instructions: Vec<instructions::Instructions>,
+  ) -> Self {
     self.install_instructions.install.extend(instructions);
     self
   }
 
-  pub(crate) fn add_uninstall_instructions(mut self, instructions: Vec<instructions::Instructions>) -> Self {
+  pub(crate) fn add_uninstall_instructions(
+    mut self,
+    instructions: Vec<instructions::Instructions>,
+  ) -> Self {
     self.uninstall_instructions.install.extend(instructions);
     self
   }
 
-  pub(crate) fn add_configuration_instructions(mut self, instructions: Vec<instructions::Instructions>) -> Self {
+  pub(crate) fn add_configuration_instructions(
+    mut self,
+    instructions: Vec<instructions::Instructions>,
+  ) -> Self {
     self.configuration_instructions.install.extend(instructions);
     self
   }
 
-  pub(crate) fn add_deconfiguration_instructions(mut self, instructions: Vec<instructions::Instructions>) -> Self {
-    self.deconfiguration_instructions.install.extend(instructions);
+  pub(crate) fn add_deconfiguration_instructions(
+    mut self,
+    instructions: Vec<instructions::Instructions>,
+  ) -> Self {
+    self
+      .deconfiguration_instructions
+      .install
+      .extend(instructions);
     self
   }
 }
@@ -122,7 +137,11 @@ impl SoftwareBundle {
     }
   }
 
-  fn installer(&self, os: &config::OS, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn installer(
+    &self,
+    os: &config::OS,
+    dry_run: bool,
+  ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut handles = vec![];
 
     for program in &self.programs {
@@ -164,7 +183,11 @@ impl SoftwareBundle {
     Ok(())
   }
 
-  fn configurator(&self, os: &config::OS, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn configurator(
+    &self,
+    os: &config::OS,
+    dry_run: bool,
+  ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut handles = vec![];
 
     for program in &self.programs {

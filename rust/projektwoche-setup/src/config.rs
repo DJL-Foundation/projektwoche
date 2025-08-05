@@ -31,6 +31,7 @@ impl Default for OS {
   }
 }
 
+#[derive(Copy, Clone)]
 pub enum OsCategory {
   Windows,
   LinuxBased,
@@ -80,6 +81,15 @@ impl OsMatcher {
       OsCategory::AndroidBased => OsMatcher::new(&ANDROID_BASED_OS),
     }
   }
+
+  pub fn from_categorys(categories: &[OsCategory]) -> Self {
+    let mut os_list = Vec::new();
+    for category in categories {
+      os_list.extend(OsMatcher::from_category(*category).os_list);
+    }
+    OsMatcher::new(&os_list)
+  }
+
   pub fn get_list(&self) -> &[OS] {
     &self.os_list
   }
