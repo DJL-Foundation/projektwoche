@@ -29,9 +29,6 @@ enum Commands {
 fn main() {
   let cli = Cli::parse();
 
-  let projektwochen_bundle =
-    manager::SoftwareBundle::new("Projektwochen", "A bundle for the Projektwochen");
-
   match config::use_config() {
     Ok(config) => {
       println!("Verwende Konfiguration: {:?}", config.machine);
@@ -43,7 +40,7 @@ fn main() {
             println!("==> INSTALLATION");
           }
 
-          if let Err(e) = projektwochen_bundle.install(&config.machine.os, *debug) {
+          if let Err(e) = bundles::projektwoche::bundle().install(&config.machine.os, *debug) {
             eprintln!("Fehler bei der Installation: {}", e);
           }
           println!("==> Installation abgeschlossen.");
