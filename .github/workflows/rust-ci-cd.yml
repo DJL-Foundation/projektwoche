@@ -186,7 +186,7 @@ jobs:
         run: |
           Write-Host "Checking for expected keywords in installation log..."
           $log_content = Get-Content installation-log.txt -Raw
-          $keywords = (${{ toJson(matrix.installation_keywords) }} | ConvertFrom-Json)
+          $keywords = ConvertFrom-Json '${{ toJson(matrix.installation_keywords) }}'
           $missing_keywords = @()
 
           foreach ($keyword in $keywords) {
@@ -220,7 +220,7 @@ jobs:
         run: |
           Write-Host "Checking for deinstallation keywords in uninstall log..."
           $log_content = Get-Content uninstall-log.txt -Raw
-          $keywords = (${{ toJson(matrix.deinstallation_keywords) }} | ConvertFrom-Json)
+          $keywords = ConvertFrom-Json '${{ toJson(matrix.deinstallation_keywords) }}'
           $missing_keywords = @()
 
           foreach ($keyword in $keywords) {
