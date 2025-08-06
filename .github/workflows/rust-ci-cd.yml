@@ -1,4 +1,4 @@
-name: 🚀 Cross-Platform Rust Continious Integration and Deployment
+name: 🚀 Cross-Platform Rust Continuous Integration and Deployment
 
 on:
   push:
@@ -284,9 +284,7 @@ jobs:
       - name: 📋 Check for expected keywords in logs
         run: |
           echo "Checking for expected keywords in installation log..."
-          log_content=$(cat installation-log.txt)
           keywords='${{ toJson(matrix.installation_keywords) }}'
-          missing_keywords=""
 
           echo "$keywords" | jq -r '.[]' | while read keyword; do
             if ! grep -q "$keyword" installation-log.txt; then
@@ -317,13 +315,24 @@ jobs:
           echo "Checking for deinstallation keywords in uninstall log..."
           keywords='${{ toJson(matrix.deinstallation_keywords) }}'
 
+          # Remove temp file if it exists
+          rm -f missing_deinstall_keywords.tmp
+
           echo "$keywords" | jq -r '.[]' | while read keyword; do
             if ! grep -q "$keyword" uninstall-log.txt; then
               echo "❌ Missing keyword: $keyword"
+              echo "$keyword" >> missing_deinstall_keywords.tmp
             else
               echo "✅ Found keyword: $keyword"
             fi
           done
+
+          if [ -f missing_deinstall_keywords.tmp ]; then
+            echo "❌ Missing deinstallation keywords found. Full uninstall log content:"
+            cat uninstall-log.txt
+          else
+            echo "✅ All expected deinstallation keywords found in log!"
+          fi
         continue-on-error: true
 
       - name: 📁 Upload installation logs as artifacts
@@ -386,9 +395,7 @@ jobs:
       - name: 📋 Check for expected keywords in logs
         run: |
           echo "Checking for expected keywords in installation log..."
-          log_content=$(cat installation-log.txt)
           keywords='${{ toJson(matrix.installation_keywords) }}'
-          missing_keywords=""
 
           echo "$keywords" | jq -r '.[]' | while read keyword; do
             if ! grep -q "$keyword" installation-log.txt; then
@@ -419,13 +426,24 @@ jobs:
           echo "Checking for deinstallation keywords in uninstall log..."
           keywords='${{ toJson(matrix.deinstallation_keywords) }}'
 
+          # Remove temp file if it exists
+          rm -f missing_deinstall_keywords.tmp
+
           echo "$keywords" | jq -r '.[]' | while read keyword; do
             if ! grep -q "$keyword" uninstall-log.txt; then
               echo "❌ Missing keyword: $keyword"
+              echo "$keyword" >> missing_deinstall_keywords.tmp
             else
               echo "✅ Found keyword: $keyword"
             fi
           done
+
+          if [ -f missing_deinstall_keywords.tmp ]; then
+            echo "❌ Missing deinstallation keywords found. Full uninstall log content:"
+            cat uninstall-log.txt
+          else
+            echo "✅ All expected deinstallation keywords found in log!"
+          fi
         continue-on-error: true
 
       - name: 📁 Upload installation logs as artifacts
