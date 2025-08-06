@@ -1,7 +1,22 @@
 name: 🚀 Cross-Platform Rust Continious Integration and Deployment
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/rust-ci-cd.yml"
+      - "rust/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "rustfmt.toml"
   pull_request:
+    paths:
+      - ".github/workflows/rust-ci-cd.yml"
+      - "rust/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "rustfmt.toml"
   workflow_dispatch:
 
 env:
@@ -25,11 +40,11 @@ jobs:
           - "ratatui-test-json"
         include:
           - project_name: "projektwoche-setup"
-            project_path: "rust/ratatui-test-json"
-            project_binary: "ratatui-test-json"
-          - project_name: "ratatui-test-json"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
+          - project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
 
     steps:
       - uses: actions/checkout@v4
@@ -153,7 +168,7 @@ jobs:
         run: |
           Write-Host "Checking for expected keywords in installation log..."
           $log_content = Get-Content installation-log.txt -Raw
-          $keywords = @(${{ toJson(matrix.installation_keywords) }})
+          $keywords = (${{ toJson(matrix.installation_keywords) }} | ConvertFrom-Json)
           $missing_keywords = @()
 
           foreach ($keyword in $keywords) {
@@ -175,16 +190,6 @@ jobs:
           }
         shell: powershell
 
-      - name: 📁 Upload installation logs as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-installation-logs-${{ matrix.bundle }}
-          path: |
-            dry-run-log.txt
-            installation-log.txt
-            uninstall-log.txt
-          retention-days: 7
-
       - name: 🗑️ Test uninstallation
         run: |
           Write-Host "Testing uninstallation in dry-run mode..."
@@ -197,7 +202,7 @@ jobs:
         run: |
           Write-Host "Checking for deinstallation keywords in uninstall log..."
           $log_content = Get-Content uninstall-log.txt -Raw
-          $keywords = @(${{ toJson(matrix.deinstallation_keywords) }})
+          $keywords = (${{ toJson(matrix.deinstallation_keywords) }} | ConvertFrom-Json)
           $missing_keywords = @()
 
           foreach ($keyword in $keywords) {
@@ -219,6 +224,15 @@ jobs:
         shell: powershell
         continue-on-error: true
 
+      - name: 📁 Upload installation logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installation-logs-${{ matrix.bundle }}
+          path: |
+            dry-run-log.txt
+            installation-log.txt
+            uninstall-log.txt
+          retention-days: 7
   # Test projektwoche-setup on Linux with actual installations
   test-linux:
     name: 🐧 [CUSTOM] [PROJEKTWOCHE-SETUP] Linux Integration Test
@@ -291,16 +305,6 @@ jobs:
             echo "✅ All expected keywords found in log!"
           fi
 
-      - name: 📁 Upload installation logs as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-installation-logs-${{ matrix.bundle }}
-          path: |
-            dry-run-log.txt
-            installation-log.txt
-            uninstall-log.txt
-          retention-days: 7
-
       - name: 🗑️ Test uninstallation
         run: |
           echo "Testing uninstallation in dry-run mode..."
@@ -322,6 +326,15 @@ jobs:
           done
         continue-on-error: true
 
+      - name: 📁 Upload installation logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-installation-logs-${{ matrix.bundle }}
+          path: |
+            dry-run-log.txt
+            installation-log.txt
+            uninstall-log.txt
+          retention-days: 7
   # Test projektwoche-setup on macOS with actual installations
   test-macos:
     name: 🍎 [CUSTOM] [PROJEKTWOCHE-SETUP] macOS Integration Test
@@ -394,16 +407,6 @@ jobs:
             echo "✅ All expected keywords found in log!"
           fi
 
-      - name: 📁 Upload installation logs as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-installation-logs-${{ matrix.bundle }}
-          path: |
-            dry-run-log.txt
-            installation-log.txt
-            uninstall-log.txt
-          retention-days: 7
-
       - name: 🗑️ Test uninstallation
         run: |
           echo "Testing uninstallation in dry-run mode..."
@@ -425,6 +428,15 @@ jobs:
           done
         continue-on-error: true
 
+      - name: 📁 Upload installation logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installation-logs-${{ matrix.bundle }}
+          path: |
+            dry-run-log.txt
+            installation-log.txt
+            uninstall-log.txt
+          retention-days: 7
   # Error handling and edge case testing for projektwoche-setup only
   test-edge-cases:
     name: 🔍 Edge Case Testing
