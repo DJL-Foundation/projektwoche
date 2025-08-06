@@ -1,0 +1,603 @@
+name: 🚀 Cross-Platform Rust Continuous Integration and Deployment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/rust-ci-cd.yml"
+      - "rust/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "rustfmt.toml"
+  pull_request:
+    paths:
+      - ".github/workflows/rust-ci-cd.yml"
+      - "rust/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "rustfmt.toml"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Build all Rust projects
+  build:
+    name: 🔧 Build ${{ matrix.project_name }} for ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-pc-windows-gnu
+          - x86_64-unknown-linux-gnu
+          - x86_64-apple-darwin
+        project_name:
+          - "projektwoche-setup"
+          - "ratatui-test-json"
+        include:
+          - target: x86_64-pc-windows-gnu
+            project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
+          - target: x86_64-unknown-linux-gnu
+            project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
+          - target: x86_64-apple-darwin
+            project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
+          - target: x86_64-pc-windows-gnu
+            project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+          - target: x86_64-unknown-linux-gnu
+            project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+          - target: x86_64-apple-darwin
+            project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: 🔧 Install cross-compilation dependencies
+        if: matrix.target == 'x86_64-pc-windows-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: 💾 Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ matrix.project_name }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: ⚡ Build binary
+        run: |
+          cargo build --release --target ${{ matrix.target }} --bin ${{ matrix.project_binary }}
+
+      - name: 📦 Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.project_name }}-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/${{ matrix.project_binary }}*
+          retention-days: 7
+
+  # Run cargo tests for all projects except projektwoche-setup
+  test-rust:
+    name: 🧪 Unit Tests for ${{ matrix.project_name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project_name:
+          - "ratatui-test-json"
+        include:
+          - project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 💾 Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: ${{ runner.os }}-cargo-test-${{ matrix.project_name }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: 🧪 Run tests
+        run: |
+          cargo test --bin ${{ matrix.project_name }}
+
+  # Test projektwoche-setup on Windows with actual installations
+  test-windows:
+    name: 🪟 [CUSTOM] [PROJEKTWOCHE-SETUP] Windows Integration Tests
+    needs: build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bundle:
+          - "projektwoche"
+        include:
+          - bundle: "projektwoche"
+            installation_keywords:
+              - "Installing program: Node.js"
+              - "Installing program: Bun"
+              - "Installing program: Visual Studio Code"
+              - "Installation abgeschlossen"
+            deinstallation_keywords:
+              - "Uninstalling program: Node.js"
+              - "Uninstalling program: Bun"
+              - "Uninstalling program: Visual Studio Code"
+              - "Deinstallation abgeschlossen"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-pc-windows-gnu
+          path: ./bin
+
+      - name: ⚙️ Make binary executable
+        run: |
+          Get-ChildItem -Path "./bin" -Recurse -File | ForEach-Object { $_.FullName }
+          Move-Item "./bin/projektwoche-setup.exe" "./projektwoche-setup.exe" -Force
+        shell: powershell
+
+      - name: 🔍 Test dry-run mode
+        run: |
+          Write-Host "Testing dry-run mode for ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup.exe install -d ${{ matrix.bundle }} > dry-run-log.txt 2>&1
+          Get-Content dry-run-log.txt
+        shell: powershell
+
+      - name: 🚀 Run actual installation and log output
+        run: |
+          Write-Host "Running actual installation of ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup.exe install ${{ matrix.bundle }} > installation-log.txt 2>&1
+          Get-Content installation-log.txt
+        shell: powershell
+
+      - name: 📋 Check for expected keywords in logs
+        run: |
+          Write-Host "Checking for expected keywords in installation log..."
+          $log_content = Get-Content installation-log.txt -Raw
+          $keywords = ConvertFrom-Json '${{ toJson(matrix.installation_keywords) }}'
+          $missing_keywords = @()
+
+          foreach ($keyword in $keywords) {
+            if ($log_content -notmatch [regex]::Escape($keyword)) {
+              $missing_keywords += $keyword
+              Write-Host "❌ Missing keyword: $keyword" -ForegroundColor Red
+            } else {
+              Write-Host "✅ Found keyword: $keyword" -ForegroundColor Green
+            }
+          }
+
+          if ($missing_keywords.Count -gt 0) {
+            Write-Host "❌ Missing keywords: $($missing_keywords -join ', ')" -ForegroundColor Red
+            Write-Host "Full log content:"
+            Write-Host $log_content
+            exit 1
+          } else {
+            Write-Host "✅ All expected keywords found in log!" -ForegroundColor Green
+          }
+        shell: powershell
+
+      - name: 🗑️ Test uninstallation
+        run: |
+          Write-Host "Testing uninstallation in dry-run mode..."
+          ./projektwoche-setup.exe uninstall -d ${{ matrix.bundle }} > uninstall-log.txt 2>&1
+          Get-Content uninstall-log.txt
+        shell: powershell
+        continue-on-error: true
+
+      - name: 📋 Check for deinstallation keywords in logs
+        run: |
+          Write-Host "Checking for deinstallation keywords in uninstall log..."
+          $log_content = Get-Content uninstall-log.txt -Raw
+          $keywords = ConvertFrom-Json '${{ toJson(matrix.deinstallation_keywords) }}'
+          $missing_keywords = @()
+
+          foreach ($keyword in $keywords) {
+            if ($log_content -notmatch [regex]::Escape($keyword)) {
+              $missing_keywords += $keyword
+              Write-Host "❌ Missing keyword: $keyword" -ForegroundColor Red
+            } else {
+              Write-Host "✅ Found keyword: $keyword" -ForegroundColor Green
+            }
+          }
+
+          if ($missing_keywords.Count -gt 0) {
+            Write-Host "❌ Missing deinstallation keywords: $($missing_keywords -join ', ')" -ForegroundColor Red
+            Write-Host "Full uninstall log content:"
+            Write-Host $log_content
+          } else {
+            Write-Host "✅ All expected deinstallation keywords found in log!" -ForegroundColor Green
+          }
+        shell: powershell
+        continue-on-error: true
+
+      - name: 📁 Upload installation logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installation-logs-${{ matrix.bundle }}
+          path: |
+            dry-run-log.txt
+            installation-log.txt
+            uninstall-log.txt
+          retention-days: 7
+  # Test projektwoche-setup on Linux with actual installations
+  test-linux:
+    name: 🐧 [CUSTOM] [PROJEKTWOCHE-SETUP] Linux Integration Test
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bundle:
+          - "projektwoche"
+        include:
+          - bundle: "projektwoche"
+            installation_keywords:
+              - "Installing program: Node.js"
+              - "Installing program: Bun"
+              - "Installing program: Visual Studio Code"
+              - "Installation abgeschlossen"
+            deinstallation_keywords:
+              - "Uninstalling program: Node.js"
+              - "Uninstalling program: Bun"
+              - "Uninstalling program: Visual Studio Code"
+              - "Deinstallation abgeschlossen"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-unknown-linux-gnu
+          path: ./bin
+
+      - name: ⚙️ Make binary executable
+        run: |
+          chmod +x ./bin/projektwoche-setup
+          mv ./bin/projektwoche-setup ./projektwoche-setup
+
+      - name: 🔍 Test dry-run mode
+        run: |
+          echo "Testing dry-run mode for ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install -d ${{ matrix.bundle }} > dry-run-log.txt 2>&1
+          cat dry-run-log.txt
+
+      - name: 🚀 Run actual installation and log output
+        run: |
+          echo "Running actual installation of ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install ${{ matrix.bundle }} > installation-log.txt 2>&1
+          cat installation-log.txt
+
+      - name: 📋 Check for expected keywords in logs
+        run: |
+          echo "Checking for expected keywords in installation log..."
+          keywords='${{ toJson(matrix.installation_keywords) }}'
+
+          echo "$keywords" | jq -r '.[]' | while read keyword; do
+            if ! grep -q "$keyword" installation-log.txt; then
+              echo "❌ Missing keyword: $keyword"
+              echo "$keyword" >> missing_keywords.tmp
+            else
+              echo "✅ Found keyword: $keyword"
+            fi
+          done
+
+          if [ -f missing_keywords.tmp ]; then
+            echo "❌ Missing keywords found. Full log content:"
+            cat installation-log.txt
+            exit 1
+          else
+            echo "✅ All expected keywords found in log!"
+          fi
+
+      - name: 🗑️ Test uninstallation
+        run: |
+          echo "Testing uninstallation in dry-run mode..."
+          ./projektwoche-setup uninstall -d ${{ matrix.bundle }} > uninstall-log.txt 2>&1
+          cat uninstall-log.txt
+        continue-on-error: true
+
+      - name: 📋 Check for deinstallation keywords in logs
+        run: |
+          echo "Checking for deinstallation keywords in uninstall log..."
+          keywords='${{ toJson(matrix.deinstallation_keywords) }}'
+
+          # Remove temp file if it exists
+          rm -f missing_deinstall_keywords.tmp
+
+          echo "$keywords" | jq -r '.[]' | while read keyword; do
+            if ! grep -q "$keyword" uninstall-log.txt; then
+              echo "❌ Missing keyword: $keyword"
+              echo "$keyword" >> missing_deinstall_keywords.tmp
+            else
+              echo "✅ Found keyword: $keyword"
+            fi
+          done
+
+          if [ -f missing_deinstall_keywords.tmp ]; then
+            echo "❌ Missing deinstallation keywords found. Full uninstall log content:"
+            cat uninstall-log.txt
+          else
+            echo "✅ All expected deinstallation keywords found in log!"
+          fi
+        continue-on-error: true
+
+      - name: 📁 Upload installation logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-installation-logs-${{ matrix.bundle }}
+          path: |
+            dry-run-log.txt
+            installation-log.txt
+            uninstall-log.txt
+          retention-days: 7
+  # Test projektwoche-setup on macOS with actual installations
+  test-macos:
+    name: 🍎 [CUSTOM] [PROJEKTWOCHE-SETUP] macOS Integration Test
+    needs: build
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bundle:
+          - "projektwoche"
+        include:
+          - bundle: "projektwoche"
+            installation_keywords:
+              - "Installing program: Node.js"
+              - "Installing program: Bun"
+              - "Installing program: Visual Studio Code"
+              - "Installation abgeschlossen"
+            deinstallation_keywords:
+              - "Uninstalling program: Node.js"
+              - "Uninstalling program: Bun"
+              - "Uninstalling program: Visual Studio Code"
+              - "Deinstallation abgeschlossen"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download macOS binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-apple-darwin
+          path: ./bin
+
+      - name: ⚙️ Make binary executable
+        run: |
+          chmod +x ./bin/projektwoche-setup
+          mv ./bin/projektwoche-setup ./projektwoche-setup
+
+      - name: 🔍 Test dry-run mode
+        run: |
+          echo "Testing dry-run mode for ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install -d ${{ matrix.bundle }} > dry-run-log.txt 2>&1
+          cat dry-run-log.txt
+
+      - name: 🚀 Run actual installation and log output
+        run: |
+          echo "Running actual installation of ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install ${{ matrix.bundle }} > installation-log.txt 2>&1
+          cat installation-log.txt
+
+      - name: 📋 Check for expected keywords in logs
+        run: |
+          echo "Checking for expected keywords in installation log..."
+          keywords='${{ toJson(matrix.installation_keywords) }}'
+
+          echo "$keywords" | jq -r '.[]' | while read keyword; do
+            if ! grep -q "$keyword" installation-log.txt; then
+              echo "❌ Missing keyword: $keyword"
+              echo "$keyword" >> missing_keywords.tmp
+            else
+              echo "✅ Found keyword: $keyword"
+            fi
+          done
+
+          if [ -f missing_keywords.tmp ]; then
+            echo "❌ Missing keywords found. Full log content:"
+            cat installation-log.txt
+            exit 1
+          else
+            echo "✅ All expected keywords found in log!"
+          fi
+
+      - name: 🗑️ Test uninstallation
+        run: |
+          echo "Testing uninstallation in dry-run mode..."
+          ./projektwoche-setup uninstall -d ${{ matrix.bundle }} > uninstall-log.txt 2>&1
+          cat uninstall-log.txt
+        continue-on-error: true
+
+      - name: 📋 Check for deinstallation keywords in logs
+        run: |
+          echo "Checking for deinstallation keywords in uninstall log..."
+          keywords='${{ toJson(matrix.deinstallation_keywords) }}'
+
+          # Remove temp file if it exists
+          rm -f missing_deinstall_keywords.tmp
+
+          echo "$keywords" | jq -r '.[]' | while read keyword; do
+            if ! grep -q "$keyword" uninstall-log.txt; then
+              echo "❌ Missing keyword: $keyword"
+              echo "$keyword" >> missing_deinstall_keywords.tmp
+            else
+              echo "✅ Found keyword: $keyword"
+            fi
+          done
+
+          if [ -f missing_deinstall_keywords.tmp ]; then
+            echo "❌ Missing deinstallation keywords found. Full uninstall log content:"
+            cat uninstall-log.txt
+          else
+            echo "✅ All expected deinstallation keywords found in log!"
+          fi
+        continue-on-error: true
+
+      - name: 📁 Upload installation logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installation-logs-${{ matrix.bundle }}
+          path: |
+            dry-run-log.txt
+            installation-log.txt
+            uninstall-log.txt
+          retention-days: 7
+  # Error handling and edge case testing for projektwoche-setup only
+  test-edge-cases:
+    name: 🔍 Edge Case Testing
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-pc-windows-gnu
+          path: ./bin
+
+      - name: ⚙️ Make binary executable
+        run: |
+          Move-Item "./bin/projektwoche-setup.exe" "./projektwoche-setup.exe" -Force
+        shell: powershell
+
+      - name: ❌ Test invalid bundle names
+        run: |
+          Write-Host "Testing invalid bundle handling..."
+          ./projektwoche-setup.exe install -d nonexistent-bundle > invalid-bundle-log.txt 2>&1
+          Get-Content invalid-bundle-log.txt
+        shell: powershell
+        continue-on-error: true
+
+      - name: ❓ Test help command
+        run: |
+          Write-Host "Testing help command..."
+          ./projektwoche-setup.exe --help > help-log.txt 2>&1
+          Get-Content help-log.txt
+        shell: powershell
+
+      - name: 📋 Test version command
+        run: |
+          Write-Host "Testing version command..."
+          ./projektwoche-setup.exe --version > version-log.txt 2>&1
+          Get-Content version-log.txt
+        shell: powershell
+        continue-on-error: true
+
+      - name: 📁 Upload edge case logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-case-logs
+          path: |
+            invalid-bundle-log.txt
+            help-log.txt
+            version-log.txt
+          retention-days: 7
+
+  # Performance and stress testing for projektwoche-setup only
+  test-performance:
+    name: 🚄 Performance Testing
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-unknown-linux-gnu
+          path: ./bin
+      - name: ⚙️ Make binary executable
+        run: |
+          chmod +x ./bin/projektwoche-setup
+          mv ./bin/projektwoche-setup ./projektwoche-setup
+
+      - name: ⚡ Test dry-run performance
+        run: |
+          echo "Testing performance of dry-run installation..."
+          time ./projektwoche-setup install -d projektwoche > performance-dry-run-log.txt 2>&1
+          cat performance-dry-run-log.txt
+
+      - name: 🧠 Test memory usage during dry-run
+        run: |
+          echo "Testing memory usage during dry-run execution..."
+          /usr/bin/time -v ./projektwoche-setup install -d projektwoche > memory-usage-log.txt 2>&1
+          cat memory-usage-log.txt
+
+      - name: 📁 Upload performance logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-logs
+          path: |
+            performance-dry-run-log.txt
+            memory-usage-log.txt
+          retention-days: 7
+
+  # Collect results and create summary
+  test-summary:
+    name: 📊 Test Summary
+    needs:
+      [
+        test-rust,
+        test-windows,
+        test-linux,
+        test-macos,
+        test-edge-cases,
+        test-performance,
+      ]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: 📈 Create test summary
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Rust Unit Tests | ${{ needs.test-rust.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows Integration | ${{ needs.test-windows.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux Integration | ${{ needs.test-linux.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS Integration | ${{ needs.test-macos.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Edge Cases | ${{ needs.test-edge-cases.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance | ${{ needs.test-performance.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.test-rust.result }}" == "success" && "${{ needs.test-windows.result }}" == "success" && "${{ needs.test-linux.result }}" == "success" && "${{ needs.test-macos.result }}" == "success" && "${{ needs.test-edge-cases.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" ]]; then
+            echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed. Check individual job logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
