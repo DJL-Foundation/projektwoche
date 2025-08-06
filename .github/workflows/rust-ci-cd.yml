@@ -1,7 +1,6 @@
 name: 🚀 Cross-Platform Rust Continious Integration and Deployment
 
 on:
-  push:
   pull_request:
   workflow_dispatch:
 
@@ -12,7 +11,7 @@ env:
 jobs:
   # Build all Rust projects
   build:
-    name: 🔧 Build ${{ matrix.project.name }} for ${{ matrix.target }}
+    name: 🔧 Build ${{ matrix.project_name }} for ${{ matrix.target }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -21,13 +20,16 @@ jobs:
           - x86_64-pc-windows-gnu
           - x86_64-unknown-linux-gnu
           - x86_64-apple-darwin
-        project:
-          - name: "projektwoche-setup"
-            path: "rust/projektwoche-setup"
-            binary: "projektwoche-setup"
-          - name: "ratatui-test-json"
-            path: "rust/ratatui-test-json"
-            binary: "ratatui-test-json"
+        project_name:
+          - "projektwoche-setup"
+          - "ratatui-test-json"
+        include:
+          - project_name: "projektwoche-setup"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+          - project_name: "ratatui-test-json"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
 
     steps:
       - uses: actions/checkout@v4
@@ -49,30 +51,32 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            rust/target
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ matrix.project.name }}-${{ hashFiles('**/Cargo.lock') }}
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ matrix.project_name }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚡ Build binary
         run: |
-          cargo build --release --target ${{ matrix.target }} --bin ${{ matrix.project.binary }}
+          cargo build --release --target ${{ matrix.target }} --bin ${{ matrix.project_binary }}
 
       - name: 📦 Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.project.name }}-${{ matrix.target }}
+          name: ${{ matrix.project_name }}-${{ matrix.target }}
           path: |
-            rust/target/${{ matrix.target }}/release/${{ matrix.project.binary }}*
-          retention-days: 2
+            target/${{ matrix.target }}/release/${{ matrix.project_binary }}*
+          retention-days: 7
 
   # Run cargo tests for all projects except projektwoche-setup
   test-rust:
-    name: 🧪 Unit Tests for ${{ matrix.project.name }}
+    name: 🧪 Unit Tests for ${{ matrix.project_name }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        project:
-          - name: "ratatui-test-json"
-            path: "rust/ratatui-test-json"
+        project_name:
+          - "ratatui-test-json"
+        include:
+          - project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
 
     steps:
       - uses: actions/checkout@v4
@@ -87,11 +91,11 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             rust/target
-          key: ${{ runner.os }}-cargo-test-${{ matrix.project.name }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-test-${{ matrix.project_name }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: 🧪 Run tests
         run: |
-          cargo test --bin ${{ matrix.project.name }}
+          cargo test --bin ${{ matrix.project_name }}
 
   # Test projektwoche-setup on Windows with actual installations
   test-windows:
@@ -101,9 +105,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-scenario:
-          - name: "🛠️ Projektwoche Bundle Installation"
-            bundle: "projektwoche"
+        bundle:
+          - "projektwoche"
+        include:
+          - bundle: "projektwoche"
             installation_keywords:
               - "Installing program: Node.js"
               - "Installing program: Bun"
@@ -132,15 +137,15 @@ jobs:
 
       - name: 🔍 Test dry-run mode
         run: |
-          Write-Host "Testing dry-run mode for ${{ matrix.test-scenario.bundle }} bundle"
-          ./projektwoche-setup.exe install -d ${{ matrix.test-scenario.bundle }} > dry-run-log.txt 2>&1
+          Write-Host "Testing dry-run mode for ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup.exe install -d ${{ matrix.bundle }} > dry-run-log.txt 2>&1
           Get-Content dry-run-log.txt
         shell: powershell
 
       - name: 🚀 Run actual installation and log output
         run: |
-          Write-Host "Running actual installation of ${{ matrix.test-scenario.bundle }} bundle"
-          ./projektwoche-setup.exe install ${{ matrix.test-scenario.bundle }} > installation-log.txt 2>&1
+          Write-Host "Running actual installation of ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup.exe install ${{ matrix.bundle }} > installation-log.txt 2>&1
           Get-Content installation-log.txt
         shell: powershell
 
@@ -148,7 +153,7 @@ jobs:
         run: |
           Write-Host "Checking for expected keywords in installation log..."
           $log_content = Get-Content installation-log.txt -Raw
-          $keywords = @(${{ toJson(matrix.test-scenario.installation_keywords) }})
+          $keywords = @(${{ toJson(matrix.installation_keywords) }})
           $missing_keywords = @()
 
           foreach ($keyword in $keywords) {
@@ -173,7 +178,7 @@ jobs:
       - name: 📁 Upload installation logs as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installation-logs-${{ matrix.test-scenario.name }}
+          name: windows-installation-logs-${{ matrix.bundle }}
           path: |
             dry-run-log.txt
             installation-log.txt
@@ -183,7 +188,7 @@ jobs:
       - name: 🗑️ Test uninstallation
         run: |
           Write-Host "Testing uninstallation in dry-run mode..."
-          ./projektwoche-setup.exe uninstall -d ${{ matrix.test-scenario.bundle }} > uninstall-log.txt 2>&1
+          ./projektwoche-setup.exe uninstall -d ${{ matrix.bundle }} > uninstall-log.txt 2>&1
           Get-Content uninstall-log.txt
         shell: powershell
         continue-on-error: true
@@ -192,7 +197,7 @@ jobs:
         run: |
           Write-Host "Checking for deinstallation keywords in uninstall log..."
           $log_content = Get-Content uninstall-log.txt -Raw
-          $keywords = @(${{ toJson(matrix.test-scenario.deinstallation_keywords) }})
+          $keywords = @(${{ toJson(matrix.deinstallation_keywords) }})
           $missing_keywords = @()
 
           foreach ($keyword in $keywords) {
@@ -216,15 +221,16 @@ jobs:
 
   # Test projektwoche-setup on Linux with actual installations
   test-linux:
-    name: 🐧 Linux Integration Test
+    name: 🐧 [CUSTOM] [PROJEKTWOCHE-SETUP] Linux Integration Test
     needs: build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        test-scenario:
-          - name: "🛠️ Projektwoche Bundle Installation"
-            bundle: "projektwoche"
+        bundle:
+          - "projektwoche"
+        include:
+          - bundle: "projektwoche"
             installation_keywords:
               - "Installing program: Node.js"
               - "Installing program: Bun"
@@ -251,21 +257,21 @@ jobs:
 
       - name: 🔍 Test dry-run mode
         run: |
-          echo "Testing dry-run mode for ${{ matrix.test-scenario.bundle }} bundle"
-          ./projektwoche-setup install -d ${{ matrix.test-scenario.bundle }} > dry-run-log.txt 2>&1
+          echo "Testing dry-run mode for ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install -d ${{ matrix.bundle }} > dry-run-log.txt 2>&1
           cat dry-run-log.txt
 
       - name: 🚀 Run actual installation and log output
         run: |
-          echo "Running actual installation of ${{ matrix.test-scenario.bundle }} bundle"
-          ./projektwoche-setup install ${{ matrix.test-scenario.bundle }} > installation-log.txt 2>&1
+          echo "Running actual installation of ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install ${{ matrix.bundle }} > installation-log.txt 2>&1
           cat installation-log.txt
 
       - name: 📋 Check for expected keywords in logs
         run: |
           echo "Checking for expected keywords in installation log..."
           log_content=$(cat installation-log.txt)
-          keywords='${{ toJson(matrix.test-scenario.installation_keywords) }}'
+          keywords='${{ toJson(matrix.installation_keywords) }}'
           missing_keywords=""
 
           echo "$keywords" | jq -r '.[]' | while read keyword; do
@@ -288,7 +294,7 @@ jobs:
       - name: 📁 Upload installation logs as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-installation-logs-${{ matrix.test-scenario.name }}
+          name: linux-installation-logs-${{ matrix.bundle }}
           path: |
             dry-run-log.txt
             installation-log.txt
@@ -298,14 +304,14 @@ jobs:
       - name: 🗑️ Test uninstallation
         run: |
           echo "Testing uninstallation in dry-run mode..."
-          ./projektwoche-setup uninstall -d ${{ matrix.test-scenario.bundle }} > uninstall-log.txt 2>&1
+          ./projektwoche-setup uninstall -d ${{ matrix.bundle }} > uninstall-log.txt 2>&1
           cat uninstall-log.txt
         continue-on-error: true
 
       - name: 📋 Check for deinstallation keywords in logs
         run: |
           echo "Checking for deinstallation keywords in uninstall log..."
-          keywords='${{ toJson(matrix.test-scenario.deinstallation_keywords) }}'
+          keywords='${{ toJson(matrix.deinstallation_keywords) }}'
 
           echo "$keywords" | jq -r '.[]' | while read keyword; do
             if ! grep -q "$keyword" uninstall-log.txt; then
@@ -318,15 +324,16 @@ jobs:
 
   # Test projektwoche-setup on macOS with actual installations
   test-macos:
-    name: 🍎 macOS Integration Test
+    name: 🍎 [CUSTOM] [PROJEKTWOCHE-SETUP] macOS Integration Test
     needs: build
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        test-scenario:
-          - name: "🍺 Projektwoche Bundle Installation"
-            bundle: "projektwoche"
+        bundle:
+          - "projektwoche"
+        include:
+          - bundle: "projektwoche"
             installation_keywords:
               - "Installing program: Node.js"
               - "Installing program: Bun"
@@ -353,21 +360,21 @@ jobs:
 
       - name: 🔍 Test dry-run mode
         run: |
-          echo "Testing dry-run mode for ${{ matrix.test-scenario.bundle }} bundle"
-          ./projektwoche-setup install -d ${{ matrix.test-scenario.bundle }} > dry-run-log.txt 2>&1
+          echo "Testing dry-run mode for ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install -d ${{ matrix.bundle }} > dry-run-log.txt 2>&1
           cat dry-run-log.txt
 
       - name: 🚀 Run actual installation and log output
         run: |
-          echo "Running actual installation of ${{ matrix.test-scenario.bundle }} bundle"
-          ./projektwoche-setup install ${{ matrix.test-scenario.bundle }} > installation-log.txt 2>&1
+          echo "Running actual installation of ${{ matrix.bundle }} bundle"
+          ./projektwoche-setup install ${{ matrix.bundle }} > installation-log.txt 2>&1
           cat installation-log.txt
 
       - name: 📋 Check for expected keywords in logs
         run: |
           echo "Checking for expected keywords in installation log..."
           log_content=$(cat installation-log.txt)
-          keywords='${{ toJson(matrix.test-scenario.installation_keywords) }}'
+          keywords='${{ toJson(matrix.installation_keywords) }}'
           missing_keywords=""
 
           echo "$keywords" | jq -r '.[]' | while read keyword; do
@@ -390,7 +397,7 @@ jobs:
       - name: 📁 Upload installation logs as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-installation-logs-${{ matrix.test-scenario.name }}
+          name: macos-installation-logs-${{ matrix.bundle }}
           path: |
             dry-run-log.txt
             installation-log.txt
@@ -400,14 +407,14 @@ jobs:
       - name: 🗑️ Test uninstallation
         run: |
           echo "Testing uninstallation in dry-run mode..."
-          ./projektwoche-setup uninstall -d ${{ matrix.test-scenario.bundle }} > uninstall-log.txt 2>&1
+          ./projektwoche-setup uninstall -d ${{ matrix.bundle }} > uninstall-log.txt 2>&1
           cat uninstall-log.txt
         continue-on-error: true
 
       - name: 📋 Check for deinstallation keywords in logs
         run: |
           echo "Checking for deinstallation keywords in uninstall log..."
-          keywords='${{ toJson(matrix.test-scenario.deinstallation_keywords) }}'
+          keywords='${{ toJson(matrix.deinstallation_keywords) }}'
 
           echo "$keywords" | jq -r '.[]' | while read keyword; do
             if ! grep -q "$keyword" uninstall-log.txt; then
@@ -541,7 +548,7 @@ jobs:
           echo "| Performance | ${{ needs.test-performance.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.test-rust.result }}" == "success" && "${{ needs.test-windows.result }}" == "success" && "${{ needs.test-linux.result }}" == "success" && "${{ needs.test-macos.result }}" == "success" ]]; then
+          if [[ "${{ needs.test-rust.result }}" == "success" && "${{ needs.test-windows.result }}" == "success" && "${{ needs.test-linux.result }}" == "success" && "${{ needs.test-macos.result }}" == "success" && "${{ needs.test-edge-cases.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" ]]; then
             echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Some tests failed. Check individual job logs for details." >> $GITHUB_STEP_SUMMARY
