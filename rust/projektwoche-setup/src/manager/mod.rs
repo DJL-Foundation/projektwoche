@@ -133,7 +133,7 @@ impl SoftwareBundle {
       .expect(&format!("No installation commands found for OS: {:?}", os));
 
     for instruction in &commands.install_instructions.install {
-      if let Err(e) = instruction.run() {
+      if let Err(e) = instruction.run(dry_run) {
         eprintln!("  Command failed: {}", e);
         return;
       }
@@ -178,7 +178,7 @@ impl SoftwareBundle {
       .expect(&format!("No configuration commands found for OS: {:?}", os));
 
     for instruction in &commands.configuration_instructions.install {
-      if let Err(e) = instruction.run() {
+      if let Err(e) = instruction.run(dry_run) {
         eprintln!("  Configuration failed: {}", e);
         return Err(e);
       }
@@ -227,7 +227,9 @@ impl SoftwareBundle {
     os: &config::machine::OS,
     dry_run: bool,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    self.installer(os, dry_run)?;
+    println!("==> Installing bundle: {}", self.name);
+    println!("Description: {}", self.description);
+        self.installer(os, dry_run)?;
     self.configurator(os, dry_run)?;
     Ok(())
   }
@@ -244,7 +246,7 @@ impl SoftwareBundle {
     ));
 
     for instruction in &commands.uninstall_instructions.install {
-      if let Err(e) = instruction.run() {
+      if let Err(e) = instruction.run(dry_run) {
         eprintln!("  Uninstallation failed: {}", e);
         return Err(e);
       }
@@ -300,7 +302,7 @@ impl SoftwareBundle {
     ));
 
     for instruction in &commands.deconfiguration_instructions.install {
-      if let Err(e) = instruction.run() {
+      if let Err(e) = instruction.run(dry_run) {
         eprintln!("  Deconfiguration failed: {}", e);
         return Err(e);
       }
@@ -350,6 +352,8 @@ impl SoftwareBundle {
     os: &config::machine::OS,
     dry_run: bool,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    println!("==> Uninstalling bundle: {}", self.name);
+    println!("Description: {}", self.description);
     self.uninstaller(os, dry_run)?;
     self.deconfigurator(os, dry_run)?;
     Ok(())
