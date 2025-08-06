@@ -1,7 +1,5 @@
-use confy::ConfyError;
 use os_info::get;
 use serde::{Deserialize, Serialize};
-use std::process::exit;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -82,7 +80,7 @@ impl OsMatcher {
     }
   }
 
-  pub fn from_categorys(categories: &[OsCategory]) -> Self {
+  pub fn from_categories(categories: &[OsCategory]) -> Self {
     let mut os_list = Vec::new();
     for category in categories {
       os_list.extend(OsMatcher::from_category(*category).os_list);
@@ -175,21 +173,4 @@ pub struct Machine {
   pub(crate) os: OS,
   #[serde(default)]
   pub(crate) arch: Architectures,
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct Config {
-  #[serde(default)]
-  pub(crate) machine: Machine,
-}
-
-pub fn use_config() -> Result<Config, Box<dyn std::error::Error>> {
-  let config: Result<Config, ConfyError> = confy::load("prowo-setup", "config");
-  match config {
-    Ok(config) => Ok(config),
-    Err(e) => {
-      eprintln!("Unbekannter Fehler beim Laden der Konfiguration: {}", e);
-      exit(1)
-    }
-  }
 }

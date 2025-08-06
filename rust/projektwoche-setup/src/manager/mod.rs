@@ -81,7 +81,7 @@ impl InstructionMapping {
 pub struct Package {
   name: &'static str,
   description: &'static str,
-  mapping: HashMap<config::OS, InstructionMapping>,
+  mapping: HashMap<config::machine::OS, InstructionMapping>,
 }
 
 impl Package {
@@ -93,7 +93,11 @@ impl Package {
     }
   }
 
-  pub(crate) fn add_mapping(mut self, os: config::OsMatcher, mapping: InstructionMapping) -> Self {
+  pub(crate) fn add_mapping(
+    mut self,
+    os: config::machine::OsMatcher,
+    mapping: InstructionMapping,
+  ) -> Self {
     for os_type in os.get_list() {
       self.mapping.insert(*os_type, mapping.clone());
     }
@@ -121,7 +125,7 @@ impl SoftwareBundle {
     self
   }
 
-  fn installer_thread(program: &Package, os: &config::OS, dry_run: bool) {
+  fn installer_thread(program: &Package, os: &config::machine::OS, dry_run: bool) {
     println!("==> Installing program: {}", program.name); // i want multiple windows in the ui but i i just use println! the multithread will just stack over each other
     let commands = program
       .mapping
@@ -139,7 +143,7 @@ impl SoftwareBundle {
 
   fn installer(
     &self,
-    os: &config::OS,
+    os: &config::machine::OS,
     dry_run: bool,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut handles = vec![];
@@ -164,7 +168,7 @@ impl SoftwareBundle {
 
   fn configurator_thread(
     program: &Package,
-    os: &config::OS,
+    os: &config::machine::OS,
     dry_run: bool,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("==> Configuring program: {}", program.name);
@@ -185,7 +189,7 @@ impl SoftwareBundle {
 
   fn configurator(
     &self,
-    os: &config::OS,
+    os: &config::machine::OS,
     dry_run: bool,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut handles = vec![];
@@ -220,11 +224,134 @@ impl SoftwareBundle {
 
   pub(crate) fn install(
     &self,
-    os: &config::OS,
+    os: &config::machine::OS,
     dry_run: bool,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     self.installer(os, dry_run)?;
     self.configurator(os, dry_run)?;
+    Ok(())
+  }
+
+  fn uninstaller_thread(
+    program: &Package,
+    os: &config::machine::OS,
+    dry_run: bool,
+  ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    println!("==> Uninstalling program: {}", program.name);
+    let commands = program.mapping.get(os).expect(&format!(
+      "No uninstallation commands found for OS: {:?}",
+      os
+    ));
+
+    for instruction in &commands.uninstall_instructions.install {
+      if let Err(e) = instruction.run() {
+        eprintln!("  Uninstallation failed: {}", e);
+        return Err(e);
+      }
+      println!("  Uninstallation executed successfully.");
+    }
+    Ok(())
+  }
+
+  fn uninstaller(
+    &self,
+    os: &config::machine::OS,
+    dry_run: bool,
+  ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut handles = vec![];
+
+    for program in &self.programs {
+      if let Some(commands) = program.mapping.get(os) {
+        if commands.uninstall_instructions.install.is_empty() {
+          println!("No uninstallation functions for program: {}", program.name);
+          continue;
+        }
+
+        let os = os.clone();
+        let program = program.clone();
+        let handle = std::thread::spawn(move || Self::uninstaller_thread(&program, &os, dry_run));
+        handles.push(handle);
+      } else {
+        println!(
+          "No uninstallation mapping found for program: {}",
+          program.name
+        );
+      }
+    }
+
+    for handle in handles {
+      if let Err(e) = handle.join() {
+        eprintln!("Thread panicked: {:?}", e);
+      }
+    }
+
+    Ok(())
+  }
+
+  fn deconfigurator_thread(
+    program: &Package,
+    os: &config::machine::OS,
+    dry_run: bool,
+  ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    println!("==> Deconfiguring program: {}", program.name);
+    let commands = program.mapping.get(os).expect(&format!(
+      "No deconfiguration commands found for OS: {:?}",
+      os
+    ));
+
+    for instruction in &commands.deconfiguration_instructions.install {
+      if let Err(e) = instruction.run() {
+        eprintln!("  Deconfiguration failed: {}", e);
+        return Err(e);
+      }
+      println!("  Deconfiguration applied successfully.");
+    }
+    Ok(())
+  }
+
+  fn deconfigurator(
+    &self,
+    os: &config::machine::OS,
+    dry_run: bool,
+  ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut handles = vec![];
+
+    for program in &self.programs {
+      if let Some(commands) = program.mapping.get(os) {
+        if commands.deconfiguration_instructions.install.is_empty() {
+          println!("No deconfiguration functions for program: {}", program.name);
+          continue;
+        }
+
+        let os = os.clone();
+        let program = program.clone();
+        let handle =
+          std::thread::spawn(move || Self::deconfigurator_thread(&program, &os, dry_run));
+        handles.push(handle);
+      } else {
+        println!(
+          "No deconfiguration mapping found for program: {}",
+          program.name
+        );
+      }
+    }
+
+    for handle in handles {
+      if let Err(e) = handle.join() {
+        eprintln!("Thread panicked: {:?}", e);
+      }
+    }
+
+    Ok(())
+  }
+
+  pub(crate) fn uninstall(
+    &self,
+    os: &config::machine::OS,
+    dry_run: bool,
+  ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    self.uninstaller(os, dry_run)?;
+    self.deconfigurator(os, dry_run)?;
     Ok(())
   }
 }
