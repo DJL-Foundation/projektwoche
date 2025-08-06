@@ -10,33 +10,16 @@ pub trait AnyInstruction {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Filetype {
-  EXE,
-  ZIP,
-  TarGz,
-  TarBz2,
-  TarXz,
-  MSI,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct DownloadAndExec {
   url: &'static str,
-  filetype: Filetype,
   silent: bool,
   custom_args: Option<&'static [&'static str]>,
 }
 
 impl DownloadAndExec {
-  fn new(
-    url: &'static str,
-    filetype: Filetype,
-    silent: bool,
-    custom_args: Option<&'static [&'static str]>,
-  ) -> Self {
+  fn new(url: &'static str, silent: bool, custom_args: Option<&'static [&'static str]>) -> Self {
     Self {
       url,
-      filetype,
       silent,
       custom_args,
     }
@@ -61,80 +44,80 @@ impl AnyInstruction for DownloadAndExec {
       return Err("Download failed".into());
     }
 
-    match self.filetype {
-      Filetype::EXE => {
-        #[cfg(windows)]
-        {
-          let mut cmd = Command::new(&file_path);
+    // match self.filetype {
+    //   Filetype::EXE => {
+    //     #[cfg(windows)]
+    //     {
+    //       let mut cmd = Command::new(&file_path);
 
-          // Add custom arguments if provided
-          if let Some(args) = self.custom_args {
-            cmd.args(args);
-          } else if self.silent {
-            // Try common silent installation flags for EXE files
-            // Different installers use different flags, so we try the most common ones
-            cmd.args(&["/S"]); // NSIS installers
-            // Some installers might not recognize /S, so we could try multiple approaches
-            // but for safety, we'll start with the most common one
-          }
+    //       // Add custom arguments if provided
+    //       if let Some(args) = self.custom_args {
+    //         cmd.args(args);
+    //       } else if self.silent {
+    //         // Try common silent installation flags for EXE files
+    //         // Different installers use different flags, so we try the most common ones
+    //         cmd.args(&["/S"]); // NSIS installers
+    //         // Some installers might not recognize /S, so we could try multiple approaches
+    //         // but for safety, we'll start with the most common one
+    //       }
 
-          let status = cmd.status()?;
-          if !status.success() {
-            // If /S failed and we're in silent mode, try other common flags
-            if self.silent && self.custom_args.is_none() {
-              let silent_flags = [
-                &["/SILENT"][..],
-                &["/VERYSILENT"][..],
-                &["/quiet"][..],
-                &["/Q"][..],
-                &["/s"][..],
-                &["--silent"][..],
-                &["-s"][..],
-              ];
+    //       let status = cmd.status()?;
+    //       if !status.success() {
+    //         // If /S failed and we're in silent mode, try other common flags
+    //         if self.silent && self.custom_args.is_none() {
+    //           let silent_flags = [
+    //             &["/SILENT"][..],
+    //             &["/VERYSILENT"][..],
+    //             &["/quiet"][..],
+    //             &["/Q"][..],
+    //             &["/s"][..],
+    //             &["--silent"][..],
+    //             &["-s"][..],
+    //           ];
 
-              for flags in &silent_flags {
-                let mut retry_cmd = Command::new(&file_path);
-                retry_cmd.args(*flags);
-                if let Ok(status) = retry_cmd.status() {
-                  if status.success() {
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        }
-        #[cfg(not(windows))]
-        {
-          return Err("EXE files can only be executed on Windows".into());
-        }
-      }
-      Filetype::MSI => {
-        #[cfg(windows)]
-        {
-          let mut cmd = Command::new("msiexec");
-          cmd.arg("/i").arg(&file_path);
+    //           for flags in &silent_flags {
+    //             let mut retry_cmd = Command::new(&file_path);
+    //             retry_cmd.args(*flags);
+    //             if let Ok(status) = retry_cmd.status() {
+    //               if status.success() {
+    //                 break;
+    //               }
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //     #[cfg(not(windows))]
+    //     {
+    //       return Err("EXE files can only be executed on Windows".into());
+    //     }
+    //   }
+    //   Filetype::MSI => {
+    //     #[cfg(windows)]
+    //     {
+    //       let mut cmd = Command::new("msiexec");
+    //       cmd.arg("/i").arg(&file_path);
 
-          if let Some(args) = self.custom_args {
-            cmd.args(args);
-          } else if self.silent {
-            // MSI silent installation flags
-            cmd.args(&["/quiet", "/qn", "/norestart"]);
-          }
+    //       if let Some(args) = self.custom_args {
+    //         cmd.args(args);
+    //       } else if self.silent {
+    //         // MSI silent installation flags
+    //         cmd.args(&["/quiet", "/qn", "/norestart"]);
+    //       }
 
-          cmd.status()?;
-        }
-        #[cfg(not(windows))]
-        {
-          return Err("MSI files can only be executed on Windows".into());
-        }
-      }
-      Filetype::ZIP => {
-        // ZIP files should be extracted, not executed
-        return Err("ZIP files should be extracted using extract_archive, not executed".into());
-      }
-      _ => return Err("Unsupported filetype for execution".into()),
-    }
+    //       cmd.status()?;
+    //     }
+    //     #[cfg(not(windows))]
+    //     {
+    //       return Err("MSI files can only be executed on Windows".into());
+    //     }
+    //   }
+    //   Filetype::ZIP => {
+    //     // ZIP files should be extracted, not executed
+    //     return Err("ZIP files should be extracted using extract_archive, not executed".into());
+    //   }
+    //   _ => return Err("Unsupported filetype for execution".into()),
+    // }
 
     // Clean up downloaded file
     if file_path.exists() {
@@ -759,29 +742,27 @@ impl Instruction {
     }
   }
 
-  pub fn download_and_exec(mut self, filetype: Filetype, url: &'static str) -> Instructions {
+  pub fn download_and_exec(mut self, url: &'static str) -> Instructions {
     self.instruction = Some(Instructions::DownloadAndExec(DownloadAndExec::new(
-      url, filetype, false, None,
+      url, false, None,
     )));
     Instructions::from_instruction(self)
   }
 
-  pub fn download_and_exec_silent(mut self, filetype: Filetype, url: &'static str) -> Instructions {
+  pub fn download_and_exec_silent(mut self, url: &'static str) -> Instructions {
     self.instruction = Some(Instructions::DownloadAndExec(DownloadAndExec::new(
-      url, filetype, true, None,
+      url, true, None,
     )));
     Instructions::from_instruction(self)
   }
 
   pub fn download_and_exec_with_args(
     mut self,
-    filetype: Filetype,
     url: &'static str,
     args: &'static [&'static str],
   ) -> Instructions {
     self.instruction = Some(Instructions::DownloadAndExec(DownloadAndExec::new(
       url,
-      filetype,
       false,
       Some(args),
     )));
