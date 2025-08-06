@@ -39,10 +39,28 @@ jobs:
           - "projektwoche-setup"
           - "ratatui-test-json"
         include:
-          - project_name: "projektwoche-setup"
+          - target: x86_64-pc-windows-gnu
+            project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
-          - project_name: "ratatui-test-json"
+          - target: x86_64-unknown-linux-gnu
+            project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
+          - target: x86_64-apple-darwin
+            project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
+          - target: x86_64-pc-windows-gnu
+            project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+          - target: x86_64-unknown-linux-gnu
+            project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+          - target: x86_64-apple-darwin
+            project_name: "ratatui-test-json"
             project_path: "rust/ratatui-test-json"
             project_binary: "ratatui-test-json"
 
