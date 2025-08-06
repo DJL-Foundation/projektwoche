@@ -34,7 +34,6 @@ jobs:
         target:
           - x86_64-pc-windows-gnu
           - x86_64-unknown-linux-gnu
-          - x86_64-apple-darwin
         project_name:
           - "projektwoche-setup"
           - "ratatui-test-json"
@@ -47,19 +46,11 @@ jobs:
             project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
-          - target: x86_64-apple-darwin
-            project_name: "projektwoche-setup"
-            project_path: "rust/projektwoche-setup"
-            project_binary: "projektwoche-setup"
           - target: x86_64-pc-windows-gnu
             project_name: "ratatui-test-json"
             project_path: "rust/ratatui-test-json"
             project_binary: "ratatui-test-json"
           - target: x86_64-unknown-linux-gnu
-            project_name: "ratatui-test-json"
-            project_path: "rust/ratatui-test-json"
-            project_binary: "ratatui-test-json"
-          - target: x86_64-apple-darwin
             project_name: "ratatui-test-json"
             project_path: "rust/ratatui-test-json"
             project_binary: "ratatui-test-json"
@@ -97,6 +88,51 @@ jobs:
           name: ${{ matrix.project_name }}-${{ matrix.target }}
           path: |
             target/${{ matrix.target }}/release/${{ matrix.project_binary }}*
+          retention-days: 7
+
+  build-macos:
+    name: 🔧 Build ${{ matrix.project_name }} for macOS
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project_name:
+          - "projektwoche-setup"
+          - "ratatui-test-json"
+        include:
+          - project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
+          - project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: 💾 Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-x86_64-apple-darwin-${{ matrix.project_name }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: ⚡ Build binary
+        run: |
+          cargo build --release --target x86_64-apple-darwin --bin ${{ matrix.project_binary }}
+
+      - name: 📦 Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.project_name }}-x86_64-apple-darwin
+          path: |
+            target/x86_64-apple-darwin/release/${{ matrix.project_binary }}*
           retention-days: 7
 
   # Run cargo tests for all projects except projektwoche-setup
@@ -365,7 +401,7 @@ jobs:
   # Test projektwoche-setup on macOS with actual installations
   test-macos:
     name: 🍎 [CUSTOM] [PROJEKTWOCHE-SETUP] macOS Integration Test
-    needs: build
+    needs: build-macos
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -473,6 +509,7 @@ jobs:
             installation-log.txt
             uninstall-log.txt
           retention-days: 7
+
   # Error handling and edge case testing for projektwoche-setup only
   test-edge-cases:
     name: 🔍 Edge Case Testing
