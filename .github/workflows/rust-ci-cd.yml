@@ -27,7 +27,7 @@ jobs:
   # Build all Rust projects
   build:
     name: 🔧 Build ${{ matrix.project_name }} for ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -138,7 +138,7 @@ jobs:
   # Run cargo tests for all projects except projektwoche-setup
   test-rust:
     name: 🧪 Unit Tests for ${{ matrix.project_name }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     strategy:
       matrix:
         project_name:
@@ -291,7 +291,7 @@ jobs:
   test-linux:
     name: 🐧 [CUSTOM] [PROJEKTWOCHE-SETUP] Linux Integration Test
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -567,7 +567,7 @@ jobs:
   test-performance:
     name: 🚄 Performance Testing
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - uses: actions/checkout@v4
@@ -615,7 +615,7 @@ jobs:
         test-edge-cases,
         test-performance,
       ]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     if: always()
 
     steps:
