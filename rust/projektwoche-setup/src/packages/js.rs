@@ -6,14 +6,19 @@ pub fn nodejs() -> Package {
   Package::new("Node.js", "JavaScript runtime").add_mapping(
     OsMatcher::from_category(OsCategory::Windows),
     InstructionMapping::new().add_install_instructions(vec![
-      Instruction::new("Install windows_nvm").download_and_exec(
-        "https://github.com/coreybutler/nvm-windows/releases/download/1.2.2/nvm-setup.exe",
-      ),
+      Instruction::new("Install nvm").cmd("wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"),      Instruction::new("Install Node.js").cmd("nvm install latest"),
+      Instruction::new("Set Node.js version").cmd("nvm use latest"),
+      Instruction::new("Add Node.js to PATH").cmd("setx PATH \"%PATH%;%NVM_HOME%\\nodejs\\node_modules\\.bin\""),
+    ]),
+  ).add_mapping(
+    OsMatcher::from_category(OsCategory::LinuxBased),
+    InstructionMapping::new().add_install_instructions(vec![
+      Instruction::new("Install nvm").cmd("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"),
       Instruction::new("Install Node.js").cmd("nvm install latest"),
       Instruction::new("Set Node.js version").cmd("nvm use latest"),
-      Instruction::new("Add Node.js to PATH").add_to_path("%NVM_HOME%\\nodejs\\node_modules\\.bin"),
+      Instruction::new("Add Node.js to PATH").cmd("echo 'export PATH=\"$PATH:$HOME/.nvm/versions/node/$(nvm version)/bin\"' >> ~/.bashrc"),
+      Instruction::new("Reload shell").cmd("source ~/.bashrc"),
     ]),
-    // config func to add to windows path export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")" \n [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
   )
 }
 
@@ -26,7 +31,7 @@ pub fn bun() -> Package {
       ]),
     )
     .add_mapping(
-      OsMatcher::from_categories(&[OsCategory::LinuxBased, OsCategory::MacOS]),
+      OsMatcher::from_category(OsCategory::LinuxBased),
       InstructionMapping::new().add_install_instructions(vec![
         Instruction::new("Install Bun").cmd("curl -fsSL https://bun.sh/install | bash"),
       ]),

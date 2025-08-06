@@ -10,5 +10,12 @@ pub fn vscode() -> Package {
         "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user",
       ),
     ]),
+  ).add_mapping(
+    OsMatcher::from_category(OsCategory::RHELBased),
+    InstructionMapping::new().add_install_instructions(vec![
+      Instruction::new("Download VSCode").install_package(
+        "vscode",
+      ),
+    ]),
   )
 }

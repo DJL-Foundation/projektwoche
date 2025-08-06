@@ -6,7 +6,7 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 pub trait AnyInstruction {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>>; // Todo: implement dry_run
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -27,11 +27,19 @@ impl DownloadAndExec {
 }
 
 impl AnyInstruction for DownloadAndExec {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let temp_dir = std::env::temp_dir();
     let filename = self.url.split('/').last().unwrap_or("download");
     let file_path = temp_dir.join(filename);
 
+    if dry_run {
+      println!(
+        "Dry run: would download {} to {}",
+        self.url,
+        file_path.display()
+      );
+      return Ok(());
+    }
     // Download the file
     let response = std::process::Command::new("curl")
       .arg("-L")
@@ -44,80 +52,104 @@ impl AnyInstruction for DownloadAndExec {
       return Err("Download failed".into());
     }
 
-    // match self.filetype {
-    //   Filetype::EXE => {
-    //     #[cfg(windows)]
-    //     {
-    //       let mut cmd = Command::new(&file_path);
+    let file_extension = file_path
+      .extension()
+      .and_then(|ext| ext.to_str())
+      .unwrap_or("")
+      .to_lowercase();
 
-    //       // Add custom arguments if provided
-    //       if let Some(args) = self.custom_args {
-    //         cmd.args(args);
-    //       } else if self.silent {
-    //         // Try common silent installation flags for EXE files
-    //         // Different installers use different flags, so we try the most common ones
-    //         cmd.args(&["/S"]); // NSIS installers
-    //         // Some installers might not recognize /S, so we could try multiple approaches
-    //         // but for safety, we'll start with the most common one
-    //       }
+    match file_extension.as_str() {
+      "exe" => {
+        #[cfg(windows)]
+        {
+          let mut cmd = Command::new(&file_path);
 
-    //       let status = cmd.status()?;
-    //       if !status.success() {
-    //         // If /S failed and we're in silent mode, try other common flags
-    //         if self.silent && self.custom_args.is_none() {
-    //           let silent_flags = [
-    //             &["/SILENT"][..],
-    //             &["/VERYSILENT"][..],
-    //             &["/quiet"][..],
-    //             &["/Q"][..],
-    //             &["/s"][..],
-    //             &["--silent"][..],
-    //             &["-s"][..],
-    //           ];
+          // Add custom arguments if provided
+          if let Some(args) = self.custom_args {
+            cmd.args(args);
+          } else if self.silent {
+            // Try common silent installation flags for EXE files
+            cmd.args(&["/S"]); // NSIS installers
+          }
 
-    //           for flags in &silent_flags {
-    //             let mut retry_cmd = Command::new(&file_path);
-    //             retry_cmd.args(*flags);
-    //             if let Ok(status) = retry_cmd.status() {
-    //               if status.success() {
-    //                 break;
-    //               }
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //     #[cfg(not(windows))]
-    //     {
-    //       return Err("EXE files can only be executed on Windows".into());
-    //     }
-    //   }
-    //   Filetype::MSI => {
-    //     #[cfg(windows)]
-    //     {
-    //       let mut cmd = Command::new("msiexec");
-    //       cmd.arg("/i").arg(&file_path);
+          let status = cmd.status()?;
+          if !status.success() {
+            // If /S failed and we're in silent mode, try other common flags
+            if self.silent && self.custom_args.is_none() {
+              let silent_flags = [
+                &["/SILENT"][..],
+                &["/VERYSILENT"][..],
+                &["/quiet"][..],
+                &["/Q"][..],
+                &["/s"][..],
+                &["--silent"][..],
+                &["-s"][..],
+              ];
 
-    //       if let Some(args) = self.custom_args {
-    //         cmd.args(args);
-    //       } else if self.silent {
-    //         // MSI silent installation flags
-    //         cmd.args(&["/quiet", "/qn", "/norestart"]);
-    //       }
+              for flags in &silent_flags {
+                let mut retry_cmd = Command::new(&file_path);
+                retry_cmd.args(*flags);
+                if let Ok(status) = retry_cmd.status() {
+                  if status.success() {
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+        #[cfg(not(windows))]
+        {
+          return Err("EXE files can only be executed on Windows".into());
+        }
+      }
+      "msi" => {
+        #[cfg(windows)]
+        {
+          let mut cmd = Command::new("msiexec");
+          cmd.arg("/i").arg(&file_path);
 
-    //       cmd.status()?;
-    //     }
-    //     #[cfg(not(windows))]
-    //     {
-    //       return Err("MSI files can only be executed on Windows".into());
-    //     }
-    //   }
-    //   Filetype::ZIP => {
-    //     // ZIP files should be extracted, not executed
-    //     return Err("ZIP files should be extracted using extract_archive, not executed".into());
-    //   }
-    //   _ => return Err("Unsupported filetype for execution".into()),
-    // }
+          if let Some(args) = self.custom_args {
+            cmd.args(args);
+          } else if self.silent {
+            // MSI silent installation flags
+            cmd.args(&["/quiet", "/qn", "/norestart"]);
+          }
+
+          cmd.status()?;
+        }
+        #[cfg(not(windows))]
+        {
+          return Err("MSI files can only be executed on Windows".into());
+        }
+      }
+      "" => {
+        // Handle Linux and macOS executables (no file extension)
+        #[cfg(any(unix, target_os = "macos"))]
+        {
+          let mut cmd = Command::new(&file_path);
+
+          // Add custom arguments if provided
+          if let Some(args) = self.custom_args {
+            cmd.args(args);
+          }
+
+          let status = cmd.status()?;
+          if !status.success() {
+            return Err(format!("Execution failed with exit code: {:?}", status.code()).into());
+          }
+        }
+        #[cfg(not(any(unix, target_os = "macos")))]
+        {
+          return Err("Linux/macOS executables can only be executed on Unix-like systems".into());
+        }
+      }
+      "zip" => {
+        // ZIP files should be extracted, not executed
+        return Err("ZIP files should be extracted using extract_archive, not executed".into());
+      }
+      _ => return Err("Unsupported filetype for execution".into()),
+    }
 
     // Clean up downloaded file
     if file_path.exists() {
@@ -142,9 +174,14 @@ impl Run {
 }
 
 impl AnyInstruction for Run {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if self.command.is_empty() {
       return Err("Empty command".into());
+    }
+
+    if dry_run {
+      println!("Dry run: would execute command: {}", self.command.join(" "));
+      return Ok(());
     }
 
     let mut cmd = Command::new(&self.command[0]);
@@ -173,7 +210,11 @@ impl DownloadTo {
 }
 
 impl AnyInstruction for DownloadTo {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!("Dry run: would download {} to {}", self.url, self.path);
+      return Ok(());
+    }
     let response = std::process::Command::new("curl")
       .arg("-L")
       .arg("-o")
@@ -205,9 +246,14 @@ impl Assert {
 }
 
 impl AnyInstruction for Assert {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if self.command.is_empty() {
       return Err("Empty command".into());
+    }
+
+    if dry_run {
+      println!("Dry run: expect the result of: {} to be {}", self.command.join(" "), self.expect);
+      return Ok(());
     }
 
     let mut cmd = Command::new(&self.command[0]);
@@ -245,12 +291,20 @@ impl ExtractArchive {
 }
 
 impl AnyInstruction for ExtractArchive {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let path = Path::new(self.archive_path);
     let extension = path
       .extension()
       .and_then(|s| s.to_str())
       .ok_or("No file extension")?;
+
+    if dry_run {
+      println!(
+        "Dry run: would extract {} to {}",
+        self.archive_path, self.destination
+      );
+      return Ok(());
+    }
 
     fs::create_dir_all(self.destination)?;
 
@@ -307,8 +361,14 @@ impl AddEnvVar {
 }
 
 impl AnyInstruction for AddEnvVar {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    #[cfg(windows)]
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!(
+        "Dry run: would set environment variable {}={}",
+        self.name, self.value
+      );
+      return Ok(());
+    }
     {
       Command::new("setx")
         .arg(self.name)
@@ -316,7 +376,6 @@ impl AnyInstruction for AddEnvVar {
         .status()?;
     }
 
-    #[cfg(unix)]
     {
       let home = std::env::var("HOME")?;
       let bashrc_path = format!("{}/.bashrc", home);
@@ -347,8 +406,20 @@ impl CreateShortcut {
 }
 
 impl AnyInstruction for CreateShortcut {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    #[cfg(windows)]
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!(
+        "Dry run: would create shortcut '{}' pointing to '{}'{}",
+        self.name,
+        self.target,
+        if let Some(icon) = self.icon {
+          format!(" with icon '{}'", icon)
+        } else {
+          String::new()
+        }
+      );
+      return Ok(());
+    }
     {
       let desktop = std::env::var("USERPROFILE")? + "\\Desktop";
       let shortcut_path = format!("{}\\{}.lnk", desktop, self.name);
@@ -364,7 +435,6 @@ impl AnyInstruction for CreateShortcut {
         .status()?;
     }
 
-    #[cfg(unix)]
     {
       let home = std::env::var("HOME")?;
       let desktop_path = format!("{}/Desktop/{}.desktop", home, self.name);
@@ -410,7 +480,15 @@ impl WaitForCondition {
 }
 
 impl AnyInstruction for WaitForCondition {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!(
+        "Dry run: would wait up to {} seconds for command '{}' to succeed",
+        self.timeout_secs,
+        self.check_command.join(" ")
+      );
+      return Ok(());
+    }
     let start = Instant::now();
     let timeout = Duration::from_secs(self.timeout_secs);
 
@@ -447,7 +525,11 @@ impl InstallPackage {
 }
 
 impl AnyInstruction for InstallPackage {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!("Dry run: would install package '{}'", self.package_name);
+      return Ok(());
+    }
     let package_managers = [
       ("apt", vec!["apt", "install", "-y", self.package_name]),
       ("yum", vec!["yum", "install", "-y", self.package_name]),
@@ -475,7 +557,6 @@ impl AnyInstruction for InstallPackage {
       }
     }
 
-    #[cfg(windows)]
     {
       if Command::new("choco")
         .arg("--version")
@@ -519,7 +600,19 @@ impl CloneRepository {
 }
 
 impl AnyInstruction for CloneRepository {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!(
+        "Dry run: would clone repository '{}' {}",
+        self.url,
+        if let Some(path) = self.path {
+          format!("to '{}'", path)
+        } else {
+          "to current directory".to_string()
+        }
+      );
+      return Ok(());
+    }
     let mut cmd = Command::new("git");
     cmd.arg("clone").arg(self.url);
 
@@ -549,15 +642,17 @@ impl RequestSudo {
 }
 
 impl AnyInstruction for RequestSudo {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!("Dry run: would request administrator privileges: {}", self.reason);
+      return Ok(());
+    }
     println!("Administrator privileges required: {}", self.reason);
 
-    #[cfg(unix)]
     {
       Command::new("sudo").arg("-v").status()?;
     }
 
-    #[cfg(windows)]
     {
       // On Windows, this would typically be handled by UAC prompts in individual commands
       println!("Please ensure you are running as Administrator or have UAC enabled");
@@ -579,8 +674,11 @@ impl RestartService {
 }
 
 impl AnyInstruction for RestartService {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    #[cfg(windows)]
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!("Dry run: would restart service '{}'", self.service_name);
+      return Ok(());
+    }
     {
       Command::new("sc")
         .args(&["stop", self.service_name])
@@ -593,7 +691,6 @@ impl AnyInstruction for RestartService {
         .status()?;
     }
 
-    #[cfg(unix)]
     {
       if Command::new("systemctl")
         .arg("--version")
@@ -634,7 +731,11 @@ impl BackupFile {
 }
 
 impl AnyInstruction for BackupFile {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!("Dry run: would backup file '{}'", self.path);
+      return Ok(());
+    }
     if !Path::new(self.path).exists() {
       return Ok(()); // Nothing to backup
     }
@@ -669,7 +770,14 @@ impl EditFile {
 }
 
 impl AnyInstruction for EditFile {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!(
+        "Dry run: would edit file '{}' replacing '{}' with '{}'",
+        self.path, self.find, self.replace
+      );
+      return Ok(());
+    }
     let content = fs::read_to_string(self.path)?;
     let new_content = content.replace(self.find, self.replace);
     fs::write(self.path, new_content)?;
@@ -706,22 +814,22 @@ impl Instructions {
 }
 
 impl AnyInstruction for Instructions {
-  fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match self {
-      Instructions::DownloadAndExec(inst) => inst.run(),
-      Instructions::Run(inst) => inst.run(),
-      Instructions::DownloadTo(inst) => inst.run(),
-      Instructions::Assert(inst) => inst.run(),
-      Instructions::ExtractArchive(inst) => inst.run(),
-      Instructions::AddEnvVar(inst) => inst.run(),
-      Instructions::CreateShortcut(inst) => inst.run(),
-      Instructions::WaitForCondition(inst) => inst.run(),
-      Instructions::InstallPackage(inst) => inst.run(),
-      Instructions::CloneRepository(inst) => inst.run(),
-      Instructions::RequestSudo(inst) => inst.run(),
-      Instructions::RestartService(inst) => inst.run(),
-      Instructions::BackupFile(inst) => inst.run(),
-      Instructions::EditFile(inst) => inst.run(),
+      Instructions::DownloadAndExec(inst) => inst.run(dry_run),
+      Instructions::Run(inst) => inst.run(dry_run),
+      Instructions::DownloadTo(inst) => inst.run(dry_run),
+      Instructions::Assert(inst) => inst.run(dry_run),
+      Instructions::ExtractArchive(inst) => inst.run(dry_run),
+      Instructions::AddEnvVar(inst) => inst.run(dry_run),
+      Instructions::CreateShortcut(inst) => inst.run(dry_run),
+      Instructions::WaitForCondition(inst) => inst.run(dry_run),
+      Instructions::InstallPackage(inst) => inst.run(dry_run),
+      Instructions::CloneRepository(inst) => inst.run(dry_run),
+      Instructions::RequestSudo(inst) => inst.run(dry_run),
+      Instructions::RestartService(inst) => inst.run(dry_run),
+      Instructions::BackupFile(inst) => inst.run(dry_run),
+      Instructions::EditFile(inst) => inst.run(dry_run),
     }
   }
 }
@@ -730,7 +838,6 @@ impl AnyInstruction for Instructions {
 pub struct Instruction {
   descriptor: &'static str,
   instruction: Option<Instructions>,
-  path_to_add: Option<&'static str>,
 }
 
 impl Instruction {
@@ -738,7 +845,6 @@ impl Instruction {
     Self {
       descriptor,
       instruction: None,
-      path_to_add: None,
     }
   }
 
@@ -862,27 +968,9 @@ impl Instruction {
     Instructions::from_instruction(self)
   }
 
-  pub fn add_to_path(mut self, path: &'static str) -> Instructions {
-    self.path_to_add = Some(path);
-    Instructions::from_instruction(self)
-  }
-
-  pub fn execute(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  pub fn execute(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if let Some(ref instruction) = self.instruction {
-      instruction.run()?;
-    }
-
-    if let Some(path) = self.path_to_add {
-      #[cfg(windows)]
-      {
-        std::process::Command::new("setx")
-          .args(&["PATH", &format!("%PATH%;{}", path)])
-          .status()?;
-      }
-      #[cfg(unix)]
-      {
-        println!("Add '{}' to your PATH", path);
-      }
+      instruction.run(dry_run)?;
     }
 
     Ok(())

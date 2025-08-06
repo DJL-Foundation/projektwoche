@@ -5,16 +5,23 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub enum Architectures {
   X86_64,
+
   AArch64,
 }
 impl Default for Architectures {
   fn default() -> Self {
     match get().architecture() {
       Some("x86_64") => Architectures::X86_64,
+
       Some("aarch64") => Architectures::AArch64,
       _ => {
-        eprintln!("Unsupported architecture detected. Defaulting to X86_64.");
-        Architectures::X86_64
+        eprintln!("Unsupported architecture detected.");
+
+        return Architectures::X86_64;
+
+        return Architectures::AArch64;
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+        panic!("Unsupported architecture");
       }
     }
   }
@@ -32,12 +39,19 @@ impl Default for OS {
 #[derive(Copy, Clone)]
 pub enum OsCategory {
   Windows,
-  LinuxBased,
+
   MacOS,
+
+  LinuxBased,
+
   ArchBased,
+
   RHELBased,
+
   DebianBased,
+
   GentooBased,
+
   AndroidBased,
 }
 
@@ -70,12 +84,19 @@ impl OsMatcher {
   pub fn from_category(category: OsCategory) -> Self {
     match category {
       OsCategory::Windows => OsMatcher::new(&WINDOWS_BASED_OS),
-      OsCategory::LinuxBased => OsMatcher::new(&LINUX_BASED_OS),
+
       OsCategory::MacOS => OsMatcher::new(&MAC_BASED_OS),
+
+      OsCategory::LinuxBased => OsMatcher::new(&LINUX_BASED_OS),
+
       OsCategory::ArchBased => OsMatcher::new(&ARCH_BASED_OS),
+
       OsCategory::RHELBased => OsMatcher::new(&RHEL_BASED_OS),
+
       OsCategory::DebianBased => OsMatcher::new(&DEBIAN_BASED_OS),
+
       OsCategory::GentooBased => OsMatcher::new(&GENTOO_BASED_OS),
+
       OsCategory::AndroidBased => OsMatcher::new(&ANDROID_BASED_OS),
     }
   }
