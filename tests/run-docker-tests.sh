@@ -42,7 +42,7 @@ RUN_ALL=true
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        ubuntu|windows|macos)
+        ubuntu|windows)
             OSES+=("$1")
             RUN_ALL=false
             shift
@@ -52,13 +52,11 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "Usage: $0 [ubuntu|windows|macos] [--all|-a] [--help|-h]"
-            echo "  ubuntu, windows, macos: Run tests for specific operating systems"
+            echo "Usage: $0 [ubuntu|windows] [--all|-a] [--help|-h]"
+            echo "  ubuntu, windows: Run tests for specific operating systems"
             echo "  --all, -a: Run tests for all operating systems (default)"
             echo "  --help, -h: Show this help message"
             echo ""
-            echo "Note: macOS testing requires special Docker setup and licensing."
-            echo "Consider using GitHub Actions with macos-latest for actual macOS testing."
             echo "Tests run in parallel for faster execution."
             exit 0
             ;;
@@ -72,7 +70,7 @@ done
 
 # Set default operating systems if running all
 if [ "$RUN_ALL" = true ]; then
-    OSES=("ubuntu" "windows" "macos")
+    OSES=("ubuntu" "windows")
 fi
 
 if [ ${#OSES[@]} -eq 0 ]; then
