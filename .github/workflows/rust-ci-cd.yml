@@ -27,7 +27,7 @@ jobs:
   # Build all Rust projects
   build:
     name: 🔧 Build ${{ matrix.project_name }} for ${{ matrix.target }}
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
@@ -39,18 +39,32 @@ jobs:
           - "ratatui-test-json"
         include:
           - target: x86_64-pc-windows-gnu
+            runs-on: blacksmith-8vcpu-ubuntu-2404
             project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
           - target: x86_64-unknown-linux-gnu
+            runs-on: blacksmith-4vcpu-ubuntu-2404
             project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
           - target: x86_64-pc-windows-gnu
+            runs-on: blacksmith-8vcpu-ubuntu-2404
             project_name: "ratatui-test-json"
             project_path: "rust/ratatui-test-json"
             project_binary: "ratatui-test-json"
           - target: x86_64-unknown-linux-gnu
+            runs-on: blacksmith-4vcpu-ubuntu-2404
+            project_name: "ratatui-test-json"
+            project_path: "rust/ratatui-test-json"
+            project_binary: "ratatui-test-json"
+          - target: x86_64-apple-darwin
+            runs-on: macos-latest
+            project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
+            project_binary: "projektwoche-setup"
+          - target: x86_64-apple-darwin
+            runs-on: macos-latest
             project_name: "ratatui-test-json"
             project_path: "rust/ratatui-test-json"
             project_binary: "ratatui-test-json"
@@ -90,51 +104,6 @@ jobs:
             target/${{ matrix.target }}/release/${{ matrix.project_binary }}*
           retention-days: 7
 
-  build-macos:
-    name: 🔧 Build ${{ matrix.project_name }} for macOS
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project_name:
-          - "projektwoche-setup"
-          - "ratatui-test-json"
-        include:
-          - project_name: "projektwoche-setup"
-            project_path: "rust/projektwoche-setup"
-            project_binary: "projektwoche-setup"
-          - project_name: "ratatui-test-json"
-            project_path: "rust/ratatui-test-json"
-            project_binary: "ratatui-test-json"
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 🦀 Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-apple-darwin
-
-      - name: 💾 Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-x86_64-apple-darwin-${{ matrix.project_name }}-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: ⚡ Build binary
-        run: |
-          cargo build --release --target x86_64-apple-darwin --bin ${{ matrix.project_binary }}
-
-      - name: 📦 Upload binary artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.project_name }}-x86_64-apple-darwin
-          path: |
-            target/x86_64-apple-darwin/release/${{ matrix.project_binary }}*
-          retention-days: 7
-
   # Run cargo tests for all projects except projektwoche-setup
   test-rust:
     name: 🧪 Unit Tests for ${{ matrix.project_name }}
@@ -167,8 +136,8 @@ jobs:
           cargo test --bin ${{ matrix.project_name }}
 
   # Test projektwoche-setup on Windows with actual installations
-  test-windows:
-    name: 🪟 [CUSTOM] [PROJEKTWOCHE-SETUP] Windows Integration Tests
+  test-interaction-windows:
+    name: 🪟 [PROWO] Windows Interaction Tests
     needs: build
     runs-on: windows-latest
     strategy:
@@ -188,7 +157,6 @@ jobs:
               - "Uninstalling program: Bun"
               - "Uninstalling program: Visual Studio Code"
               - "Deinstallation abgeschlossen"
-
     steps:
       - uses: actions/checkout@v4
 
@@ -287,9 +255,9 @@ jobs:
             installation-log.txt
             uninstall-log.txt
           retention-days: 7
-  # Test projektwoche-setup on Linux with actual installations
-  test-linux:
-    name: 🐧 [CUSTOM] [PROJEKTWOCHE-SETUP] Linux Integration Test
+
+  test-interaction-linux:
+    name: 🐧 [PROWO] Linux Interaction Test
     needs: build
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
@@ -398,10 +366,10 @@ jobs:
             installation-log.txt
             uninstall-log.txt
           retention-days: 7
-  # Test projektwoche-setup on macOS with actual installations
-  test-macos:
-    name: 🍎 [CUSTOM] [PROJEKTWOCHE-SETUP] macOS Integration Test
-    needs: build-macos
+
+  test-interaction-macos:
+    name: 🍎 [PROWO] macOS Interaction Test
+    needs: build
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -510,7 +478,6 @@ jobs:
             uninstall-log.txt
           retention-days: 7
 
-  # Error handling and edge case testing for projektwoche-setup only
   test-edge-cases:
     name: 🔍 Edge Case Testing
     needs: build
@@ -563,7 +530,6 @@ jobs:
             version-log.txt
           retention-days: 7
 
-  # Performance and stress testing for projektwoche-setup only
   test-performance:
     name: 🚄 Performance Testing
     needs: build
@@ -609,9 +575,9 @@ jobs:
     needs:
       [
         test-rust,
-        test-windows,
-        test-linux,
-        test-macos,
+        test-interaction-windows,
+        test-interaction-linux,
+        test-interaction-macos,
         test-edge-cases,
         test-performance,
       ]
@@ -626,14 +592,14 @@ jobs:
           echo "| Test Type | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Rust Unit Tests | ${{ needs.test-rust.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Windows Integration | ${{ needs.test-windows.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Linux Integration | ${{ needs.test-linux.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| macOS Integration | ${{ needs.test-macos.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows Integration | ${{ needs.test-interaction-windows.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux Integration | ${{ needs.test-interaction-linux.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS Integration | ${{ needs.test-interaction-macos.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Edge Cases | ${{ needs.test-edge-cases.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Performance | ${{ needs.test-performance.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.test-rust.result }}" == "success" && "${{ needs.test-windows.result }}" == "success" && "${{ needs.test-linux.result }}" == "success" && "${{ needs.test-macos.result }}" == "success" && "${{ needs.test-edge-cases.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" ]]; then
+          if [[ "${{ needs.test-rust.result }}" == "success" && "${{ needs.test-interaction-windows.result }}" == "success" && "${{ needs.test-interaction-linux.result }}" == "success" && "${{ needs.test-interaction-macos.result }}" == "success" && "${{ needs.test-edge-cases.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" ]]; then
             echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Some tests failed. Check individual job logs for details." >> $GITHUB_STEP_SUMMARY

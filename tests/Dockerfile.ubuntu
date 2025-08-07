@@ -1,0 +1,40 @@
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install essential build tools and dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    build-essential \
+    git \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    unzip \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust and Cargo
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Bun for running tests
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
+
+# Set up working directory
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Build the projektwoche-setup tool
+RUN cargo build --release --manifest-path rust/projektwoche-setup/Cargo.toml
+
+# Make the binary accessible in PATH
+ENV PATH="/app/rust/projektwoche-setup/target/release:${PATH}"
+
+# Set the default command to run installation and verification
+CMD ["sh", "-c", "projektwoche-setup install projektwoche && bun scripts/setup-tests.ts projektwoche"]
