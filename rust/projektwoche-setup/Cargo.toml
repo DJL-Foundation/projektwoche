@@ -1,7 +1,17 @@
 [package]
 name = "projektwoche-setup"
 version = "0.1.0"
+authors = ["Jack Ruder <jack@djl.foundation>"]
 edition = "2024"
+description = "A fast and efficient CLI tool for setting up development environments using customizable software bundles."
+readme = "README.md"
+homepage = "https://prowo.hackclub-stade.de/setup"
+repository = "https://github.com/DJL-Foundation/projektwoche/tree/main/rust/projektwoche-setup"
+license = "Apache-2.0"
+keywords = ["setup", "projektwoche", "tool", "command-line", "djl-foundation"]
+categories = ["command-line-utilities"]
+publish = true
+resolver = "2"
 
 [dependencies]
 serde = { version = "1.0.219", features = ["derive"] }
