@@ -1,0 +1,55 @@
+# Dependabot configuration for a monorepo with multiple project types.
+
+version: 2
+updates:
+  # Maintain dependencies for Node.js/React applications in the /apps directory.
+  - package-ecosystem: "npm"
+    directory: "/apps"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm-apps-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Maintain dependencies for shared monorepo packages in the /packages directory.
+  - package-ecosystem: "npm"
+    directory: "/packages"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm-packages-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Maintain dependencies for Rust projects in the /rust directory.
+  - package-ecosystem: "cargo"
+    directory: "/rust"
+    schedule:
+      interval: "weekly"
+    groups:
+      cargo-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Maintain dependencies for the Dockerfile for Windows.
+  # The directory is the parent folder of the Dockerfile.
+  - package-ecosystem: "docker"
+    directory: "/tests"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["major"]
