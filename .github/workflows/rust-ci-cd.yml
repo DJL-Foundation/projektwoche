@@ -21,12 +21,15 @@ jobs:
       RUN_CI: ${{ steps.check-ci.outputs.RUN_CI || steps.manual-trigger.outputs.RUN_CI }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: ▶ Allow Workflow Run
         if: ${{ github.event_name == 'workflow_dispatch' }}
         id: manual-trigger
         run: |
           echo "This workflow was triggered manually."
+          echo "run_ci=true" >> $GITHUB_ENV
           echo "RUN_CI=true" >> "$GITHUB_OUTPUT"
 
       - name: 🔎 Check if CI/CD is needed
@@ -199,10 +202,10 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Cache cross-compilation dependencies
+      - name: 💾 Cache cross-compilation dependencies
         uses: actions/cache@v4
         with:
-          path: /var/cache/apt/archives
+          path: ~/apt-cache
           key: ${{ runner.os }}-gcc-mingw
           restore-keys: |
             ${{ runner.os }}-gcc-mingw
@@ -210,6 +213,11 @@ jobs:
       - name: 🔧 Install cross-compilation dependencies
         if: matrix.target == 'x86_64-pc-windows-gnu'
         run: |
+          # Create cache directory
+          mkdir -p ~/apt-cache
+          # Configure apt to use our cache directory
+          sudo mkdir -p /etc/apt/apt.conf.d
+          echo "Dir::Cache::Archives \"$HOME/apt-cache\";" | sudo tee /etc/apt/apt.conf.d/99cache-dir
           sudo apt-get update
           sudo apt-get install -y gcc-mingw-w64-x86-64
 
@@ -502,11 +510,31 @@ jobs:
             dockerfile: tests/Dockerfile.ubuntu
             image_name: projektwoche-ubuntu-test
           - platform: windows
-            runs-on: windows-latest
+            runs-on: blacksmith-4vcpu-ubuntu-2404
             dockerfile: tests/Dockerfile.windows
             image_name: projektwoche-windows-test
     steps:
       - uses: actions/checkout@v4
+
+      - name: 💾 Cache cross-compilation dependencies for Windows
+        if: matrix.platform == 'windows'
+        uses: actions/cache@v4
+        with:
+          path: ~/apt-cache
+          key: ${{ runner.os }}-gcc-mingw-docker
+          restore-keys: |
+            ${{ runner.os }}-gcc-mingw-docker
+
+      - name: 🔧 Install cross-compilation dependencies for Windows
+        if: matrix.platform == 'windows'
+        run: |
+          # Create cache directory
+          mkdir -p ~/apt-cache
+          # Configure apt to use our cache directory
+          sudo mkdir -p /etc/apt/apt.conf.d
+          echo "Dir::Cache::Archives \"$HOME/apt-cache\";" | sudo tee /etc/apt/apt.conf.d/99cache-dir
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64
 
       - name: 🐳 Build Docker image for ${{ matrix.platform }}
         shell: bash
@@ -540,6 +568,8 @@ jobs:
       - test-prowo-docker
     if: needs.allow-deploy.outputs.RUN_DEPLOY == 'true'
     runs-on: blacksmith-2vcpu-ubuntu-2404
+    permissions:
+      contents: write
     outputs:
       release_url: ${{ steps.create-release.outputs.url }}
     steps:
@@ -571,7 +601,7 @@ jobs:
           echo "Extracted version: $VERSION"
 
       - name: 📦 Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         id: create-release
         with:
           tag_name: "projektwoche-setup-v${{ steps.extract-version.outputs.VERSION }}"
