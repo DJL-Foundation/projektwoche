@@ -13,6 +13,10 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   allow-run:
     name: 🦀 Rust Continious Integration needed?
@@ -149,6 +153,7 @@ jobs:
 
   # Build all Rust projects
   build:
+    name: 🔧 Build ${{ matrix.project_name }} for ${{ matrix.target }}
     needs: allow-run
     if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: ${{ matrix.runs-on }}
@@ -157,15 +162,15 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-msvc
           - x86_64-unknown-linux-gnu
           - x86_64-apple-darwin
         project_name:
           - "projektwoche-setup"
           - "ratatui-test-json"
         include:
-          - target: x86_64-pc-windows-gnu
-            runs-on: blacksmith-8vcpu-ubuntu-2404
+          - target: x86_64-pc-windows-msvc
+            runs-on: windows-latest
             project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
@@ -174,8 +179,8 @@ jobs:
             project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
-          - target: x86_64-pc-windows-gnu
-            runs-on: blacksmith-8vcpu-ubuntu-2404
+          - target: x86_64-pc-windows-msvc
+            runs-on: windows-latest
             project_name: "ratatui-test-json"
             project_path: "rust/ratatui-test-json"
             project_binary: "ratatui-test-json"
@@ -288,7 +293,7 @@ jobs:
           - os: windows
             os-icon: 🪟
             runs-on: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             binary-name: projektwoche-setup.exe
             install-keywords: |
               ["Installing program: Node.js", "Installing program: Bun", "Installing program: Visual Studio Code", "Installation abgeschlossen"]
@@ -526,7 +531,7 @@ jobs:
             ${{ runner.os }}-gcc-mingw-docker
 
       - name: 🔧 Install cross-compilation dependencies for Windows
-        if: matrix.platform == 'windows'
+        if: false # Disabled since Windows builds now use native MSVC runners
         run: |
           # Create cache directory
           mkdir -p ~/apt-cache
@@ -584,7 +589,7 @@ jobs:
       - name: 📥 Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: projektwoche-setup-x86_64-pc-windows-gnu
+          name: projektwoche-setup-x86_64-pc-windows-msvc
           path: ./bin
 
       - name: 📥 Download macOS artifact
@@ -612,7 +617,7 @@ jobs:
             - Binaries for Linux, Windows, and macOS are included.
           files: |
             ./bin/projektwoche-setup-x86_64-unknown-linux-gnu/projektwoche-setup
-            ./bin/projektwoche-setup-x86_64-pc-windows-gnu/projektwoche-setup.exe
+            ./bin/projektwoche-setup-x86_64-pc-windows-msvc/projektwoche-setup.exe
             ./bin/projektwoche-setup-x86_64-apple-darwin/projektwoche-setup
           draft: true
           prerelease: true
