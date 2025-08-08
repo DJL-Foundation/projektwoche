@@ -303,7 +303,7 @@ jobs:
       - name: 📥 Download Linux binary
         uses: actions/download-artifact@v4
         with:
-          name: projektwochef-unknown-linux-gnu
+          name: projektwoche-setup-x86_64-unknown-linux-gnu
           path: ./bin
 
       - name: ⚙️ Make binary executable
@@ -449,7 +449,7 @@ jobs:
     if: always()
     steps:
       - name: 📈 Create test summary
-        if: needs.allow-run.outputs.RUN_CI_CD == 'true' == 'true'
+        if: needs.allow-run.outputs.RUN_CI_CD == 'true'
         run: |
           echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -477,7 +477,7 @@ jobs:
           fi
 
       - name: 🕵🏻‍♂️ Debug Message for skipped run
-        if: needs.allow-run.outputs.RUN_CI_CD == 'true' == 'false'
+        if: needs.allow-run.outputs.RUN_CI_CD == 'false'
         run: |
           echo "## Skipped CI/CD Run" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
