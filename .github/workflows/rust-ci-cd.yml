@@ -77,6 +77,14 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Cache cross-compilation dependencies
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-gcc-mingw
+          restore-keys: |
+            ${{ runner.os }}-gcc-mingw
+
       - name: 🔧 Install cross-compilation dependencies
         if: matrix.target == 'x86_64-pc-windows-gnu'
         run: |
