@@ -12,8 +12,8 @@ updates:
         patterns:
           - "*"
         update-types:
-          - "minor"
-          - "patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   # Maintain dependencies for shared monorepo packages in the /packages directory.
   - package-ecosystem: "npm"
@@ -25,8 +25,8 @@ updates:
         patterns:
           - "*"
         update-types:
-          - "minor"
-          - "patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   # Maintain dependencies for Rust projects in the /rust directory.
   - package-ecosystem: "cargo"
@@ -38,8 +38,8 @@ updates:
         patterns:
           - "*"
         update-types:
-          - "minor"
-          - "patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   # Maintain dependencies for the Dockerfile for Windows.
   # The directory is the parent folder of the Dockerfile.
@@ -52,4 +52,4 @@ updates:
       include: "scope"
     ignore:
       - dependency-name: "*"
-        update-types: ["major"]
+        update-types: ["version-update:semver-major"]
