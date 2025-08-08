@@ -1,3 +1,55 @@
+//! # Instruction System
+//!
+//! This module provides a flexible instruction system for executing various operations
+//! across different platforms. Instructions are the atomic operations that packages
+//! use to install, configure, and manage software.
+//!
+//! ## Architecture
+//!
+//! The instruction system is built around:
+//! - **Trait-based design**: All instructions implement [`AnyInstruction`]
+//! - **Cross-platform support**: Instructions handle platform differences automatically
+//! - **Dry-run capability**: All instructions support preview mode without making changes
+//! - **Builder pattern**: Instructions are created using a fluent builder API
+//!
+//! ## Available Instruction Types
+//!
+//! ### File Operations
+//! - [`DownloadTo`]: Download files to specific locations
+//! - [`DownloadAndExec`]: Download and execute installers
+//! - [`ExtractArchive`]: Extract various archive formats
+//! - [`BackupFile`]: Create timestamped backups of files
+//! - [`EditFile`]: Perform find-and-replace operations in files
+//!
+//! ### System Operations  
+//! - [`Run`]: Execute shell commands
+//! - [`InstallPackage`]: Install packages using system package managers
+//! - [`RestartService`]: Restart system services
+//! - [`RequestSudo`]: Request administrator privileges
+//!
+//! ### Environment Setup
+//! - [`AddEnvVar`]: Set environment variables persistently
+//! - [`CreateShortcut`]: Create desktop shortcuts
+//! - [`CloneRepository`]: Clone Git repositories
+//!
+//! ### Validation and Control Flow
+//! - [`Assert`]: Validate command output
+//! - [`WaitForCondition`]: Wait for commands to succeed with timeout
+//!
+//! ## Usage Example
+//!
+//! ```rust
+//! use crate::manager::instructions::Instruction;
+//!
+//! // Create a command to download and install Node.js
+//! let install_node = Instruction::new("Install Node.js")
+//!   .download_and_exec_silent("https://nodejs.org/dist/latest/node-x64.msi");
+//!
+//! // Execute with dry-run to preview
+//! install_node.run(true)?; // Prints what would happen
+//! install_node.run(false)?; // Actually executes
+//! ```
+
 use regex::Regex;
 use std::fs;
 use std::io::Write;
@@ -5,14 +57,43 @@ use std::path::Path;
 use std::process::Command;
 use std::time::{Duration, Instant};
 
+/// Core trait that all instruction types must implement.
+/// 
+/// This trait provides a uniform interface for executing different types
+/// of operations, with built-in support for dry-run mode.
 pub trait AnyInstruction {
+  /// Execute the instruction.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `dry_run` - If true, print what would be done without executing
+  /// 
+  /// # Returns
+  /// 
+  /// Returns `Ok(())` on success, or an error describing what went wrong.
   fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
 }
 
+/// Downloads and executes installers with cross-platform support.
+/// 
+/// This instruction handles downloading executable files and running them
+/// with appropriate platform-specific installation flags. It supports:
+/// 
+/// - **Windows**: .exe and .msi files with silent installation flags
+/// - **Linux/macOS**: Executable files without extensions
+/// - **Archives**: .zip files (use [`ExtractArchive`] instead)
+/// 
+/// # Silent Installation
+/// 
+/// When `silent` is enabled, the instruction will attempt various common
+/// silent installation flags if the custom arguments fail.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct DownloadAndExec {
+  /// URL to download the installer from
   url: &'static str,
+  /// Whether to attempt silent installation
   silent: bool,
+  /// Custom arguments to pass to the installer
   custom_args: Option<&'static [&'static str]>,
 }
 
@@ -160,8 +241,19 @@ impl AnyInstruction for DownloadAndExec {
   }
 }
 
+/// Executes shell commands with cross-platform compatibility.
+/// 
+/// This instruction runs arbitrary shell commands, automatically handling
+/// argument parsing and execution. Commands are split on whitespace.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// Run::new("npm install -g yarn")
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Run {
+  /// Command split into program and arguments
   command: Vec<String>,
 }
 
@@ -513,8 +605,19 @@ impl AnyInstruction for WaitForCondition {
   }
 }
 
+/// Automatically installs packages using the system's package manager.
+/// 
+/// This instruction detects the available package manager on the system
+/// and uses it to install the specified package. Supported managers:
+/// 
+/// **Linux**: apt, yum, dnf, pacman, zypper
+/// **macOS**: brew  
+/// **Windows**: choco, winget
+/// 
+/// The instruction tries managers in order until one succeeds.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct InstallPackage {
+  /// Name of the package to install
   package_name: &'static str,
 }
 
@@ -786,21 +889,42 @@ impl AnyInstruction for EditFile {
   }
 }
 
+/// Unified instruction enum that contains all available instruction types.
+/// 
+/// This enum serves as a type-safe container for all instruction variants,
+/// allowing them to be stored in collections and executed polymorphically.
+/// 
+/// Each variant corresponds to a specific instruction type and provides
+/// the same functionality through the [`AnyInstruction`] trait.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Instructions {
+  /// Download and execute an installer
   DownloadAndExec(DownloadAndExec),
+  /// Run a shell command
   Run(Run),
+  /// Download a file to a specific location
   DownloadTo(DownloadTo),
+  /// Assert that a command produces expected output
   Assert(Assert),
+  /// Extract an archive file
   ExtractArchive(ExtractArchive),
+  /// Add an environment variable
   AddEnvVar(AddEnvVar),
+  /// Create a desktop shortcut
   CreateShortcut(CreateShortcut),
+  /// Wait for a condition to become true
   WaitForCondition(WaitForCondition),
+  /// Install a package using system package manager
   InstallPackage(InstallPackage),
+  /// Clone a Git repository
   CloneRepository(CloneRepository),
+  /// Request administrator privileges
   RequestSudo(RequestSudo),
+  /// Restart a system service
   RestartService(RestartService),
+  /// Create a backup of a file
   BackupFile(BackupFile),
+  /// Edit a file using find and replace
   EditFile(EditFile),
 }
 
@@ -834,13 +958,42 @@ impl AnyInstruction for Instructions {
   }
 }
 
+/// Builder for creating and configuring instructions.
+/// 
+/// This struct provides a fluent interface for creating instructions with
+/// a human-readable description. The builder pattern allows for clean,
+/// expressive instruction creation.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// let instruction = Instruction::new("Install Node.js")
+///   .download_and_exec_silent("https://nodejs.org/dist/latest/node-x64.msi");
+/// 
+/// instruction.run(false)?; // Execute the instruction
+/// ```
+/// 
+/// # Available Methods
+/// 
+/// - **File Operations**: `download_and_exec`, `download_to`, `extract_archive`
+/// - **Commands**: `cmd`, `install_package`, `clone_repository`  
+/// - **System**: `add_env_var`, `create_shortcut`, `restart_service`
+/// - **Validation**: `check`, `wait_for_condition`
+/// - **Utilities**: `backup_file`, `edit_file`, `request_sudo`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Instruction {
+  /// Human-readable description of what this instruction does
   descriptor: &'static str,
+  /// The actual instruction implementation (set by builder methods)
   instruction: Option<Instructions>,
 }
 
 impl Instruction {
+  /// Creates a new instruction builder with a description.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `descriptor` - Human-readable description of what this instruction does
   pub fn new(descriptor: &'static str) -> Self {
     Self {
       descriptor,
@@ -848,6 +1001,11 @@ impl Instruction {
     }
   }
 
+  /// Download and execute an installer normally.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `url` - URL to download the installer from
   pub fn download_and_exec(mut self, url: &'static str) -> Instructions {
     self.instruction = Some(Instructions::DownloadAndExec(DownloadAndExec::new(
       url, false, None,
@@ -855,6 +1013,14 @@ impl Instruction {
     Instructions::from_instruction(self)
   }
 
+  /// Download and execute an installer with silent/quiet flags.
+  /// 
+  /// This method automatically tries common silent installation flags
+  /// if no custom arguments are provided.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `url` - URL to download the installer from
   pub fn download_and_exec_silent(mut self, url: &'static str) -> Instructions {
     self.instruction = Some(Instructions::DownloadAndExec(DownloadAndExec::new(
       url, true, None,
@@ -862,6 +1028,12 @@ impl Instruction {
     Instructions::from_instruction(self)
   }
 
+  /// Download and execute an installer with custom arguments.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `url` - URL to download the installer from  
+  /// * `args` - Custom arguments to pass to the installer
   pub fn download_and_exec_with_args(
     mut self,
     url: &'static str,
@@ -875,58 +1047,24 @@ impl Instruction {
     Instructions::from_instruction(self)
   }
 
+  /// Execute a shell command.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `command` - Shell command to execute (will be split on whitespace)
   pub fn cmd(mut self, command: &str) -> Instructions {
     self.instruction = Some(Instructions::Run(Run::new(command)));
     Instructions::from_instruction(self)
   }
 
-  pub fn download_to(mut self, url: &'static str, path: &'static str) -> Instructions {
-    self.instruction = Some(Instructions::DownloadTo(DownloadTo::new(url, path)));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn check(mut self, command: &str, expect: &'static str) -> Instructions {
-    self.instruction = Some(Instructions::Assert(Assert::new(command, expect)));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn extract_archive(
-    mut self,
-    archive_path: &'static str,
-    destination: &'static str,
-  ) -> Instructions {
-    self.instruction = Some(Instructions::ExtractArchive(ExtractArchive::new(
-      archive_path,
-      destination,
-    )));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn add_env_var(mut self, name: &'static str, value: &'static str) -> Instructions {
-    self.instruction = Some(Instructions::AddEnvVar(AddEnvVar::new(name, value)));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn create_shortcut(
-    mut self,
-    name: &'static str,
-    target: &'static str,
-    icon: Option<&'static str>,
-  ) -> Instructions {
-    self.instruction = Some(Instructions::CreateShortcut(CreateShortcut::new(
-      name, target, icon,
-    )));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn wait_for_condition(mut self, check_command: &str, timeout_secs: u64) -> Instructions {
-    self.instruction = Some(Instructions::WaitForCondition(WaitForCondition::new(
-      check_command,
-      timeout_secs,
-    )));
-    Instructions::from_instruction(self)
-  }
-
+  /// Install a package using the system package manager.
+  /// 
+  /// Automatically detects and uses the appropriate package manager
+  /// for the current operating system.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `package_name` - Name of the package to install
   pub fn install_package(mut self, package_name: &'static str) -> Instructions {
     self.instruction = Some(Instructions::InstallPackage(InstallPackage::new(
       package_name,
@@ -934,40 +1072,14 @@ impl Instruction {
     Instructions::from_instruction(self)
   }
 
-  pub fn clone_repository(mut self, url: &'static str, path: Option<&'static str>) -> Instructions {
-    self.instruction = Some(Instructions::CloneRepository(CloneRepository::new(
-      url, path,
-    )));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn request_sudo(mut self, reason: &'static str) -> Instructions {
-    self.instruction = Some(Instructions::RequestSudo(RequestSudo::new(reason)));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn restart_service(mut self, service_name: &'static str) -> Instructions {
-    self.instruction = Some(Instructions::RestartService(RestartService::new(
-      service_name,
-    )));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn backup_file(mut self, path: &'static str) -> Instructions {
-    self.instruction = Some(Instructions::BackupFile(BackupFile::new(path)));
-    Instructions::from_instruction(self)
-  }
-
-  pub fn edit_file(
-    mut self,
-    path: &'static str,
-    find: &'static str,
-    replace: &'static str,
-  ) -> Instructions {
-    self.instruction = Some(Instructions::EditFile(EditFile::new(path, find, replace)));
-    Instructions::from_instruction(self)
-  }
-
+  /// Execute the instruction immediately.
+  /// 
+  /// This is a convenience method for running an instruction without
+  /// going through the Instructions enum.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `dry_run` - If true, only print what would be done
   pub fn execute(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if let Some(ref instruction) = self.instruction {
       instruction.run(dry_run)?;
