@@ -15,10 +15,10 @@ env:
 
 jobs:
   allow-run:
-    name: 🦀 Rust CI/CD needed?
+    name: 🦀 Rust Continious Integration needed?
     runs-on: blacksmith-2vcpu-ubuntu-2404
     outputs:
-      RUN_CI_CD: ${{ steps.check-ci-cd.outputs.RUN_CI_CD }}
+      RUN_CI: ${{ steps.check-ci.outputs.RUN_CI }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,37 +26,105 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "This workflow was triggered manually."
-          echo "run_ci_cd=true" >> $GITHUB_ENV
+          echo "run_ci=true" >> $GITHUB_ENV
 
       - name: 🔎 Check if CI/CD is needed
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
-        id: check-ci-cd
+        id: check-ci
         run: |
           echo "Checking if CI/CD is needed..."
           if grep -qE '\.github/workflows/rust-ci-cd\.yml|rust/|Cargo\.lock|Cargo\.toml|rustfmt\.toml' <<< "${{ github.event.commits[0].modified }}"; then
             echo "CI/CD is needed."
-            echo "RUN_CI_CD=true" >> $GITHUB_OUTPUT
+            echo "RUN_CI=true" >> $GITHUB_OUTPUT
           else
             echo "CI/CD is not needed."
-            echo "RUN_CI_CD=false" >> $GITHUB_OUTPUT
+            echo "RUN_CI=false" >> $GITHUB_OUTPUT
           fi
 
       - name: 🚀 Run Rust CI/CD
-        if: steps.check-ci-cd.outputs.RUN_CI_CD == 'true'
-        run: echo "CI/CD is needed, proceeding with the workflow."
+        if: steps.check-ci.outputs.RUN_CI == 'true'
+        run: |
+          echo "CI is needed, proceeding with the workflow."
+          echo "### ✅ CI criteria met" >> $GITHUB_STEP_SUMMARY
+          echo "The CI Jobs will be executed in the next available runners." >> $GITHUB_STEP_SUMMARY
 
-      - name: ⏭ Skip Rust CI/CD
-        if: steps.check-ci-cd.outputs.RUN_CI_CD == 'false'
+      - name: ⏭ Skip Rust CI
+        if: steps.check-ci.outputs.RUN_CI == 'false'
         run: |
           echo "CI/CD is not needed, skipping the workflow."
-          echo "This workflow was triggered by a commit that does not affect Rust code or configuration files."
-          echo "If you want to run the workflow, please modify a Rust file or the workflow configuration."
+          echo "### ❌ CI/CD criteria not met" >> $GITHUB_STEP_SUMMARY
+          echo "The CI/CD Jobs will not run as the criteria are not met." >> $GITHUB_STEP_SUMMARY
+          echo "This workflow was triggered by a commit that does not affect Rust code or configuration files." >> $GITHUB_STEP_SUMMARY
+          echo "If you want to run the CI/CD, please modify a Rust file or the workflow configuration." >> $GITHUB_STEP_SUMMARY
+          echo "You can also force a run by clicking the 'Run workflow' button in the Actions tab." >> $GITHUB_STEP_SUMMARY
+          exit 0
+
+  allow-deploy:
+    name: 🦀 Rust Deployment allowed?
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    needs: allow-run
+    if: needs.allow-run.outputs.RUN_CI == 'true'
+    outputs:
+      RUN_DEPLOY: ${{ steps.assess-deployment.outputs.RUN_DEPLOY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔎 Check Workflow Executor
+        id: check-executor
+        run: |
+          echo "Checking if the workflow is triggered by a push event..."
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "EXECUTOR_CHECK=true" >> $GITHUB_OUTPUT
+          else
+            echo "EXECUTOR_CHECK=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🔎 Check version increment
+        id: check-increment
+        run: |
+          echo "Checking if the version in Cargo.toml has been incremented..."
+          current_version=$(grep '^version' Cargo.toml | head -n 1 | awk -F\" '{print $2}')
+          previous_version=$(git show HEAD~1:Cargo.toml | grep '^version' | head -n 1 | awk -F\" '{print $2}')
+          echo "Current version: $current_version"
+          echo "Previous version: $previous_version"
+          if [[ "$current_version" != "$previous_version" ]]; then
+            echo "INCREMENT_CHECK=true" >> $GITHUB_OUTPUT
+          else
+            echo "INCREMENT_CHECK=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🔎 Assess Deployment Readiness
+        id: assess-deployment
+        run: |
+          if [[ ${{ steps.check-executor.outputs.EXECUTOR_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true' ]]; then
+            echo "Deployment is ready."
+            echo "RUN_DEPLOY=true" >> $GITHUB_OUTPUT
+          else
+            echo "Deployment is not ready."
+            echo "RUN_DEPLOY=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚀 Allow Deployment
+        if: steps.assess-deployment.outputs.RUN_DEPLOY == 'true'
+        run: |
+          echo "Deployment is allowed, proceeding with the deployment workflow."
+          echo "### ✅ Deployment criteria met" >> $GITHUB_STEP_SUMMARY
+          echo "The Deployment Job will be picked up by the next runner if all tests pass." >> $GITHUB_STEP_SUMMARY
+
+      - name: ⏭ Skip Deployment
+        if: steps.assess-deployment.outputs.RUN_DEPLOY == 'false'
+        run: |
+          echo "Deployment is not allowed, skipping the deployment workflow."
+          echo "### ❌ Deployment criteria not met" >> $GITHUB_STEP_SUMMARY
+          echo "The Deployment Job will not run as the criteria are not met." >> $GITHUB_STEP_SUMMARY
+          echo "This workflow was triggered by a commit that does not affect Rust code or configuration files, or the version in Cargo.toml has not been incremented." >> $GITHUB_STEP_SUMMARY
+          echo "If you want to run the deployment, please modify a Rust file or the workflow configuration, and ensure the version in Cargo.toml is incremented." >> $GITHUB_STEP_SUMMARY
           exit 0
 
   # Build all Rust projects
   build:
     needs: allow-run
-    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: ${{ matrix.runs-on }}
 
     strategy:
@@ -147,7 +215,7 @@ jobs:
   test:
     name: 🧪 Unit Tests for ${{ matrix.project_name }}
     needs: allow-run
-    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: blacksmith-8vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -180,7 +248,7 @@ jobs:
     needs:
       - build
       - allow-run
-    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -295,7 +363,7 @@ jobs:
     needs:
       - allow-run
       - test-prowo-interaction
-    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
@@ -349,7 +417,7 @@ jobs:
     needs:
       - allow-run
       - build
-    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -397,7 +465,7 @@ jobs:
       - allow-run
       - build
       - test-prowo-interaction
-    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -435,6 +503,61 @@ jobs:
             echo "✅ Docker test passed for ${{ matrix.platform }}"
           fi
 
+  deploy:
+    name: 🚀 Rust Deployment
+    needs:
+      - allow-deploy
+      - build
+      - test
+      - test-prowo-interaction
+      - test-prowo-edge-cases
+      - test-performance
+      - test-prowo-docker
+    if: needs.allow-deploy.outputs.RUN_DEPLOY == 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    outputs:
+      release_url: ${{ steps.create-release.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📥 Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-unknown-linux-gnu
+          path: ./bin
+
+      - name: 📥 Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-unknown-windows-gnu
+          path: ./bin
+
+      - name: 📥 Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: projektwoche-setup-x86_64-unknown-macos-gnu
+          path: ./bin
+
+      - name: 📦 Create Release
+        uses: softprops/action-gh-release@v1
+        id: create-release
+        with:
+          tag_name: 'projektwoche-setup-v$(grep ''^version'' Cargo.toml | head -n 1 | awk -F" ''{print $2}'')'
+          name: 'Projektwoche Setup v$(grep ''^version'' Cargo.toml | head -n 1 | awk -F" ''{print $2}'')'
+          body: |
+            ## Release Notes
+            - This release includes the latest version of the Projektwoche Setup tool.
+            - Binaries for Linux, Windows, and macOS are included.
+          files: |
+            ./bin/projektwoche-setup-x86_64-unknown-linux-gnu/projektwoche-setup
+            ./bin/projektwoche-setup-x86_64-unknown-windows-gnu/projektwoche-setup.exe
+            ./bin/projektwoche-setup-x86_64-unknown-macos-gnu/projektwoche-setup
+          draft: true
+          prerelease: true
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   summary:
     name: 📊 General Summary
     needs:
@@ -448,8 +571,8 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2404
     if: always()
     steps:
-      - name: 📈 Create test summary
-        if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+      - name: 📈 Create CI summary
+        if: needs.allow-run.outputs.RUN_CI == 'true'
         run: |
           echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -477,7 +600,7 @@ jobs:
           fi
 
       - name: 🕵🏻‍♂️ Debug Message for skipped run
-        if: needs.allow-run.outputs.RUN_CI_CD == 'false'
+        if: needs.allow-run.outputs.RUN_CI == 'false'
         run: |
           echo "## Skipped CI/CD Run" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -493,3 +616,27 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "If you see this message, it means the workflow was skipped as expected." >> $GITHUB_STEP_SUMMARY
           echo "You can safely ignore this message if you did not intend to run the workflow." >> $GITHUB_STEP_SUMMARY
+
+  release-summary:
+    name: 📦 Release Summary
+    needs:
+      - deploy
+      - allow-deploy
+    if: always() && needs.allow-deploy.outputs.RUN_DEPLOY == 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      # in table format again
+      - name: 📦 Create Release Summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment successful!" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Information" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Information" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release has been created successfully. You can find the release at: [Release URL](${{ needs.deploy.outputs.release_url }})" >> $GITHUB_STEP_SUMMARY
