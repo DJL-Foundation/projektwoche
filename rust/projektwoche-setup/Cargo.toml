@@ -10,7 +10,7 @@ repository = "https://github.com/DJL-Foundation/projektwoche/tree/main/rust/proj
 license = "Apache-2.0"
 keywords = ["setup", "projektwoche", "tool", "command-line", "djl-foundation"]
 categories = ["command-line-utilities"]
-publish = true
+publish = false
 resolver = "2"
 
 [dependencies]
