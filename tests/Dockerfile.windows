@@ -1,0 +1,43 @@
+# escape=`
+
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Set PowerShell as the default shell
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Install Chocolatey
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Install Git via Chocolatey
+RUN choco install git -y
+
+# Install Visual Studio Build Tools
+RUN choco install visualstudio2022buildtools -y
+
+# Install Rust
+RUN Invoke-WebRequest -Uri 'https://win.rustup.rs/x86_64' -OutFile 'rustup-init.exe'; `
+    .\rustup-init.exe -y; `
+    Remove-Item .\rustup-init.exe
+
+# Add Rust to PATH
+ENV PATH="C:\Users\ContainerUser\.cargo\bin;${PATH}"
+
+# Install Bun
+RUN powershell -c "irm bun.sh/install.ps1 | iex"
+
+# Set up working directory
+WORKDIR C:\app
+
+# Copy project files
+COPY . .
+
+# Build the projektwoche-setup tool
+RUN cargo build --release --manifest-path rust/projektwoche-setup/Cargo.toml
+
+# Add the binary to PATH
+ENV PATH="C:\app\rust\projektwoche-setup\target\release;${PATH}"
+
+# Set the default command to run installation and verification
+CMD ["powershell", "-Command", "projektwoche-setup.exe install projektwoche; if ($LASTEXITCODE -eq 0) { bun scripts/setup-tests.ts projektwoche } else { exit $LASTEXITCODE }"]

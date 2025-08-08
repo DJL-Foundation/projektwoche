@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+**/target/
+**/node_modules/
+**/.next/
+**/.turbo/
+**/dist/
+**/build/
+
+# Node.js specific
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Docker files (avoid recursion)
+Dockerfile*
+.dockerignore
+
+# Test outputs
+coverage/
+*.coverage
+
+# Local environment files
+.env*
+!.env.example
+
+# Lock files (except package-lock.json which might be needed)
+bun.lock
+yarn.lock
+pnpm-lock.yaml
+
+# Documentation
+*.md
+!README.md
+
+# License
+LICENSE
