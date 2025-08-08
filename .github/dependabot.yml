@@ -52,4 +52,4 @@ updates:
       include: "scope"
     ignore:
       - dependency-name: "*"
-        update-types: ["major"]
+        update-types: ["version-update:semver-major"]
