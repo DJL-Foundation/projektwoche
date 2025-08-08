@@ -13,6 +13,9 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
 # Install Git via Chocolatey
 RUN choco install git -y
 
+# Install Visual Studio Build Tools
+RUN choco install visualstudio2022buildtools -y
+
 # Install Rust
 RUN Invoke-WebRequest -Uri 'https://win.rustup.rs/x86_64' -OutFile 'rustup-init.exe'; `
     .\rustup-init.exe -y; `

@@ -142,9 +142,9 @@ fi
 
 # Summary
 echo "🎯 Test Summary:"
-echo "✅ Passed: ${#passed_tests[@]} (${passed_tests[*]})"
-echo "❌ Failed: ${#failed_tests[@]} (${failed_tests[*]})"
-echo "🔨 Build Failed: ${#build_failed_tests[@]} (${build_failed_tests[*]})"
+echo "✅ Passed: ${#passed_tests[@]} (${passed_tests[*]:-none})"
+echo "❌ Failed: ${#failed_tests[@]} (${failed_tests[*]:-none})"
+echo "🔨 Build Failed: ${#build_failed_tests[@]} (${build_failed_tests[*]:-none})"
 
 total_failed=$((${#failed_tests[@]} + ${#build_failed_tests[@]}))
 

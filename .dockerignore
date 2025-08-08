@@ -10,10 +10,6 @@
 **/dist/
 **/build/
 
-# Rust specific
-**/Cargo.lock
-# Keep Cargo.toml files as they're needed for builds
-
 # Node.js specific
 npm-debug.log*
 yarn-debug.log*

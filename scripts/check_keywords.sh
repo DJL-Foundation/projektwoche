@@ -21,13 +21,13 @@ then
 fi
 
 echo "Checking for expected keywords in $LOG_FILE..."
-missing_keywords=0
+export missing_keywords
 
 # Iterate over the keywords from the JSON array
 echo "$KEYWORDS_JSON" | jq -r '.[]' | while read keyword; do
     if ! grep -q "$keyword" "$LOG_FILE"; then
         echo "❌ Missing keyword: $keyword"
-        missing_keywords=$((missing_keywords+1))
+        missing_keywords=$((missing_keywords+1)); export missing_keywords
     else
         echo "✅ Found keyword: $keyword"
     fi

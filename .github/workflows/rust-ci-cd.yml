@@ -4,19 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - ".github/workflows/rust-ci-cd.yml"
-      - "rust/**"
-      - "Cargo.lock"
-      - "Cargo.toml"
-      - "rustfmt.toml"
   pull_request:
-    paths:
-      - ".github/workflows/rust-ci-cd.yml"
-      - "rust/**"
-      - "Cargo.lock"
-      - "Cargo.toml"
-      - "rustfmt.toml"
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -24,10 +14,51 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  allow-run:
+    name: 🦀 Rust CI/CD needed?
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    outputs:
+      RUN_CI_CD: ${{ steps.check-ci-cd.outputs.RUN_CI_CD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ▶ Allow Workflow Run
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "This workflow was triggered manually."
+          echo "run_ci_cd=true" >> $GITHUB_ENV
+
+      - name: 🔎 Check if CI/CD is needed
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+        id: check-ci-cd
+        run: |
+          echo "Checking if CI/CD is needed..."
+          if grep -qE '\.github/workflows/rust-ci-cd\.yml|rust/|Cargo\.lock|Cargo\.toml|rustfmt\.toml' <<< "${{ github.event.commits[0].modified }}"; then
+            echo "CI/CD is needed."
+            echo "RUN_CI_CD=true" >> $GITHUB_OUTPUT
+          else
+            echo "CI/CD is not needed."
+            echo "RUN_CI_CD=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚀 Run Rust CI/CD
+        if: steps.check-ci-cd.outputs.RUN_CI_CD == 'true'
+        run: echo "CI/CD is needed, proceeding with the workflow."
+
+      - name: ⏭ Skip Rust CI/CD
+        if: steps.check-ci-cd.outputs.RUN_CI_CD == 'false'
+        run: |
+          echo "CI/CD is not needed, skipping the workflow."
+          echo "This workflow was triggered by a commit that does not affect Rust code or configuration files."
+          echo "If you want to run the workflow, please modify a Rust file or the workflow configuration."
+          exit 0
+
   # Build all Rust projects
   build:
-    name: 🔧 Build ${{ matrix.project_name }} for ${{ matrix.target }}
+    needs: allow-run
+    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
     runs-on: ${{ matrix.runs-on }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -115,6 +146,8 @@ jobs:
   # Run cargo tests for all projects except projektwoche-setup
   test:
     name: 🧪 Unit Tests for ${{ matrix.project_name }}
+    needs: allow-run
+    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
     runs-on: blacksmith-8vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -144,7 +177,10 @@ jobs:
 
   test-prowo-interaction:
     name: ${{ matrix.os-icon }} [PROWO] ${{ matrix.os }} Interaction Test
-    needs: build
+    needs:
+      - build
+      - allow-run
+    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -256,7 +292,10 @@ jobs:
 
   test-prowo-edge-cases:
     name: 🔍 [PROWO] Edge Case Testing
-    needs: test-prowo-interaction
+    needs:
+      - allow-run
+      - test-prowo-interaction
+    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
@@ -264,7 +303,7 @@ jobs:
       - name: 📥 Download Linux binary
         uses: actions/download-artifact@v4
         with:
-          name: projektwoche-setup-x86_64-unknown-linux-gnu
+          name: projektwochef-unknown-linux-gnu
           path: ./bin
 
       - name: ⚙️ Make binary executable
@@ -307,7 +346,10 @@ jobs:
 
   test-performance:
     name: 🚄 Performance Testing
-    needs: build
+    needs:
+      - allow-run
+      - build
+    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -334,27 +376,29 @@ jobs:
 
       - name: ⚡ Test performance
         run: |
-          time ./${{ matrix.project_name }} ${{ matrix.custom_args }} > ${{matrix.project_name}}-performance-log.txt 2>&1
-          cat ${{matrix.project_name}}-performance-log.txt
+          time ./${{ matrix.project_name }} ${{ matrix.custom_args }} > ${{ matrix.project_name }}-performance-log.txt 2>&1
+          cat ${{ matrix.project_name }}-performance-log.txt
       - name: 🧠 Test memory usage during dry-run
         run: |
-          /usr/bin/time -v ./${{ matrix.project_name }} ${{ matrix.custom_args }} > ${{matrix.project_name}}-memory-usage-log.txt 2>&1
-          cat ${{matrix.project_name}}-memory-usage-log.txt
+          /usr/bin/time -v ./${{ matrix.project_name }} ${{ matrix.custom_args }} > ${{ matrix.project_name }}-memory-usage-log.txt 2>&1
+          cat ${{ matrix.project_name }}-memory-usage-log.txt
       - name: 📁 Upload performance logs as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.project_name }}-performance-logs
           path: |
-            ${{matrix.project_name}}-performance-log.txt
-            ${{matrix.project_name}}-memory-usage-log.txt
+            ${{ matrix.project_name }}-performance-log.txt
+            ${{ matrix.project_name }}-memory-usage-log.txt
           retention-days: 7
 
   test-prowo-docker:
     name: 🐳 [PROWO] ${{ matrix.platform }} Docker Test
     needs:
+      - allow-run
       - build
       - test-prowo-interaction
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    if: needs.allow-run.outputs.RUN_CI_CD == 'true'
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
@@ -363,9 +407,11 @@ jobs:
           - windows
         include:
           - platform: ubuntu
+            runs-on: blacksmith-4vcpu-ubuntu-2404
             dockerfile: tests/Dockerfile.ubuntu
             image_name: projektwoche-ubuntu-test
           - platform: windows
+            runs-on: windows-latest
             dockerfile: tests/Dockerfile.windows
             image_name: projektwoche-windows-test
     steps:
@@ -392,18 +438,18 @@ jobs:
   summary:
     name: 📊 General Summary
     needs:
-      [
-        build,
-        test,
-        test-prowo-interaction,
-        test-prowo-edge-cases,
-        test-performance,
-        test-prowo-docker,
-      ]
+      - allow-run
+      - build
+      - test
+      - test-prowo-interaction
+      - test-prowo-edge-cases
+      - test-performance
+      - test-prowo-docker
     runs-on: blacksmith-2vcpu-ubuntu-2404
     if: always()
     steps:
       - name: 📈 Create test summary
+        if: needs.allow-run.outputs.RUN_CI_CD == 'true' == 'true'
         run: |
           echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -429,3 +475,21 @@ jobs:
           else
             echo "❌ Some tests failed. Please check the logs of individual jobs for details." >> $GITHUB_STEP_SUMMARY
           fi
+
+      - name: 🕵🏻‍♂️ Debug Message for skipped run
+        if: needs.allow-run.outputs.RUN_CI_CD == 'true' == 'false'
+        run: |
+          echo "## Skipped CI/CD Run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Reason for Skipping" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This workflow was triggered by a commit that does not affect Rust code or configuration files." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### How to Force a Run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To force a run, you can trigger this workflow manually using the 'Run workflow' button in the Actions tab." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Debug Information" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "If you see this message, it means the workflow was skipped as expected." >> $GITHUB_STEP_SUMMARY
+          echo "You can safely ignore this message if you did not intend to run the workflow." >> $GITHUB_STEP_SUMMARY
