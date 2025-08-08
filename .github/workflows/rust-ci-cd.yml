@@ -18,15 +18,16 @@ jobs:
     name: 🦀 Rust Continious Integration needed?
     runs-on: blacksmith-2vcpu-ubuntu-2404
     outputs:
-      RUN_CI: ${{ steps.check-ci.outputs.RUN_CI }}
+      RUN_CI: ${{ steps.check-ci.outputs.RUN_CI || steps.manual-trigger.outputs.RUN_CI }}
     steps:
       - uses: actions/checkout@v4
 
       - name: ▶ Allow Workflow Run
         if: ${{ github.event_name == 'workflow_dispatch' }}
+        id: manual-trigger
         run: |
           echo "This workflow was triggered manually."
-          echo "run_ci=true" >> $GITHUB_ENV
+          echo "RUN_CI=true" >> "$GITHUB_OUTPUT"
 
       - name: 🔎 Check if CI/CD is needed
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
@@ -42,14 +43,14 @@ jobs:
           fi
 
       - name: 🚀 Run Rust CI/CD
-        if: steps.check-ci.outputs.RUN_CI == 'true'
+        if: steps.check-ci.outputs.RUN_CI == 'true' || steps.manual-trigger.outputs.RUN_CI == 'true'
         run: |
           echo "CI is needed, proceeding with the workflow."
           echo "### ✅ CI criteria met" >> $GITHUB_STEP_SUMMARY
           echo "The CI Jobs will be executed in the next available runners." >> $GITHUB_STEP_SUMMARY
 
       - name: ⏭ Skip Rust CI
-        if: steps.check-ci.outputs.RUN_CI == 'false'
+        if: steps.check-ci.outputs.RUN_CI == 'false' && steps.manual-trigger.outputs.RUN_CI != 'true'
         run: |
           echo "CI/CD is not needed, skipping the workflow."
           echo "### ❌ CI/CD criteria not met" >> $GITHUB_STEP_SUMMARY
@@ -68,6 +69,8 @@ jobs:
       RUN_DEPLOY: ${{ steps.assess-deployment.outputs.RUN_DEPLOY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 🔎 Check Workflow Executor
         id: check-executor
@@ -486,10 +489,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: 🐳 Build Docker image for ${{ matrix.platform }}
+        shell: bash
         run: |
           docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image_name }} .
 
       - name: 🚀 Run Docker container and capture exit code for ${{ matrix.platform }}
+        shell: bash
         run: |
           echo "Running Docker container for ${{ matrix.platform }}..."
           set +e
@@ -529,29 +534,35 @@ jobs:
       - name: 📥 Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: projektwoche-setup-x86_64-unknown-windows-gnu
+          name: projektwoche-setup-x86_64-pc-windows-gnu
           path: ./bin
 
       - name: 📥 Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: projektwoche-setup-x86_64-unknown-macos-gnu
+          name: projektwoche-setup-x86_64-apple-darwin
           path: ./bin
+
+      - name: 📋 Extract version from Cargo.toml
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -n 1 | awk -F\" '{print $2}')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
 
       - name: 📦 Create Release
         uses: softprops/action-gh-release@v1
         id: create-release
         with:
-          tag_name: 'projektwoche-setup-v$(grep ''^version'' Cargo.toml | head -n 1 | awk -F" ''{print $2}'')'
-          name: 'Projektwoche Setup v$(grep ''^version'' Cargo.toml | head -n 1 | awk -F" ''{print $2}'')'
+          tag_name: "projektwoche-setup-v${{ env.VERSION }}"
+          name: "Projektwoche Setup v${{ env.VERSION }}"
           body: |
             ## Release Notes
             - This release includes the latest version of the Projektwoche Setup tool.
             - Binaries for Linux, Windows, and macOS are included.
           files: |
             ./bin/projektwoche-setup-x86_64-unknown-linux-gnu/projektwoche-setup
-            ./bin/projektwoche-setup-x86_64-unknown-windows-gnu/projektwoche-setup.exe
-            ./bin/projektwoche-setup-x86_64-unknown-macos-gnu/projektwoche-setup
+            ./bin/projektwoche-setup-x86_64-pc-windows-gnu/projektwoche-setup.exe
+            ./bin/projektwoche-setup-x86_64-apple-darwin/projektwoche-setup
           draft: true
           prerelease: true
           fail_on_unmatched_files: true
