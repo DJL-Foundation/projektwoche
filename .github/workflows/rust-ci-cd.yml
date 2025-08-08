@@ -34,7 +34,27 @@ jobs:
         id: check-ci
         run: |
           echo "Checking if CI/CD is needed..."
-          if grep -qE '\.github/workflows/rust-ci-cd\.yml|rust/|Cargo\.lock|Cargo\.toml|rustfmt\.toml' <<< "${{ github.event.commits[0].modified }}"; then
+
+          # Determine the base and head SHAs for comparison
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            # For push events, compare with the previous commit
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.event.after }}"
+          fi
+
+          echo "Comparing changes between $BASE_SHA and $HEAD_SHA"
+
+          # Get the list of changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || echo "")
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Check if any Rust-related files were modified
+          if echo "$CHANGED_FILES" | grep -qE '\.github/workflows/rust-ci-cd\.yml|rust/|Cargo\.lock|Cargo\.toml|rustfmt\.toml'; then
             echo "CI/CD is needed."
             echo "RUN_CI=true" >> $GITHUB_OUTPUT
           else
@@ -85,9 +105,9 @@ jobs:
       - name: 🔎 Check version increment
         id: check-increment
         run: |
-          echo "Checking if the version in Cargo.toml has been incremented..."
-          current_version=$(grep '^version' Cargo.toml | head -n 1 | awk -F\" '{print $2}')
-          previous_version=$(git show HEAD~1:Cargo.toml | grep '^version' | head -n 1 | awk -F\" '{print $2}')
+          echo "Checking if the version in rust/projektwoche-setup/Cargo.toml has been incremented..."
+          current_version=$(grep '^version' rust/projektwoche-setup/Cargo.toml | head -n 1 | awk -F\" '{print $2}')
+          previous_version=$(git show HEAD~1:rust/projektwoche-setup/Cargo.toml | grep '^version' | head -n 1 | awk -F\" '{print $2}')
           echo "Current version: $current_version"
           echo "Previous version: $previous_version"
           if [[ "$current_version" != "$previous_version" ]]; then
@@ -544,17 +564,18 @@ jobs:
           path: ./bin
 
       - name: 📋 Extract version from Cargo.toml
+        id: extract-version
         run: |
-          VERSION=$(grep '^version' Cargo.toml | head -n 1 | awk -F\" '{print $2}')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          VERSION=$(grep '^version' rust/projektwoche-setup/Cargo.toml | head -n 1 | awk -F\" '{print $2}')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
       - name: 📦 Create Release
         uses: softprops/action-gh-release@v1
         id: create-release
         with:
-          tag_name: "projektwoche-setup-v${{ env.VERSION }}"
-          name: "Projektwoche Setup v${{ env.VERSION }}"
+          tag_name: "projektwoche-setup-v${{ steps.extract-version.outputs.VERSION }}"
+          name: "Projektwoche Setup v${{ steps.extract-version.outputs.VERSION }}"
           body: |
             ## Release Notes
             - This release includes the latest version of the Projektwoche Setup tool.
