@@ -2,22 +2,63 @@
   "name": "projekte-microfrontend",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://prowo.hackclub-stade.de",
+  "icon": "https://prowo.hackclub-stade.de/favicon.ico",
+  "license": "Apache-2.0",
+  "l10n": "en",
+  "galleryBanner": {
+    "color": "#000000",
+    "theme": "dark"
+  },
+  "publisher": "DJL Foundation",
+  "description": "A monorepo for the project week \"Nachhaltige Webentwicklung\" at Gymnasium Athenaeum Stade, organized by Hackclub Stade in cooperation with the DJL Foundation.",
+  "keywords": [
+    "hackclub",
+    "hackathon",
+    "projectweek",
+    "nachhaltigkeit",
+    "webentwicklung",
+    "gymnasium",
+    "athenaeum",
+    "stade",
+    "djl-foundation",
+    "microfrontend",
+    "nextjs",
+    "react",
+    "typescript",
+    "monorepo",
+    "tailwindcss",
+    "JackatDJL"
+  ],
+  "bugs": {
+    "url": "https://github.com/DJL-Foundation/projektwoche/issues",
+    "email": "issues@djl.foundation"
+  },
+  "displayName": "Projektwoche",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DJL-Foundation/projektwoche.git"
+  },
+  "type": "module",
   "scripts": {
-    "dev": "next dev -p 3001 --turbopack",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build --turbo",
+    "dev": "next dev --turbo --port $(microfrontends port)",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
+    "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "type-check": "tsc --noEmit"
+    "preview": "next build && next start",
+    "start": "next start"
   },
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "@repo/ui": "workspace:*",
+    "prowo-ui": "workspace:*",
     "next": "15.4.5"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "prowo-lint": "workspace:*",
+    "prowo-tsc": "workspace:*",
+    "@vercel/microfrontends": "^2.0.0",
     "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",

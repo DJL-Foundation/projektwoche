@@ -1,135 +1,140 @@
-# Turborepo starter
+<div align="center">
+  <img align="center" width="128px" src="apps/web/public/logo.png" />
+  <h1 align="center"><b>Projektwoche - Monorepo</b></h1>
+  <p align="center">
+   <strong>Monorepo for the project "Nachhaltige Webentwicklung" at the Project Week of the <a href="https://athenaeum-stade.de">Gymnasium Athenaeum Stade</a></strong>
+   <br />
+   <a href="https://prowo.hackclub-stade.de"><strong>prowo.hackclub-stade.de »</strong></a>
+  </p>
+</div>
 
-This Turborepo starter is maintained by the Turborepo core team.
+<br/>
 
-## Using this example
+<div align="center">
+  <img src="https://repobeats.axiom.co/api/embed/37be798df673d65a5dffc38cdd1de06d2f0a601c.svg" alt="Repobeats analytics image" title="Repobeats analytics image" />
+</div>
 
-Run the following command:
+<div align="center">
+  <a href="https://gitbutler.com/">
+   <img src="https://img.shields.io/badge/GitButler-%23B9F4F2?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMzkiIGhlaWdodD0iMjgiIHZpZXdCb3g9IjAgMCAzOSAyOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI1LjIxNDUgMTIuMTk5N0wyLjg3MTA3IDEuMzg5MTJDMS41NDI5NSAwLjc0NjUzMiAwIDEuNzE0MDYgMCAzLjE4OTQ3VjI0LjgxMDVDMCAyNi4yODU5IDEuNTQyOTUgMjcuMjUzNSAyLjg3MTA3IDI2LjYxMDlMMjUuMjE0NSAxNS44MDAzQzI2LjcxOTcgMTUuMDcyMSAyNi43MTk3IDEyLjkyNzkgMjUuMjE0NSAxMi4xOTk3WiIgZmlsbD0iYmxhY2siLz4KPHBhdGggZD0iTTEzLjc4NTUgMTIuMTk5N0wzNi4xMjg5IDEuMzg5MTJDMzcuNDU3MSAwLjc0NjUzMiAzOSAxLjcxNFA2IDM5IDMuMTg5NDdWMjQuODEwNUMzOSAyNi4yODU5IDM3LjQ1NzEgMjcuMjUzNSAzNi4xMjg5IDI2LjYxMDlMMTMuNzg1NSAxNS44MDAzQzEyLjI4MDMgMTUuMDcyMSAxMi4yODAzIDEyLjkyNzkgMTMuNzg1NSAxMi4xOTk3WiIgZmlsbD0idXJsKCNwYWludDBfcmFkaWFsXzMxMF8xMjkpIi8%2BCjxkZWZzPgo8cmFkaWFsR3JhZGllbnQgaWQ9InBhaW50MF9yYWRpYWxfMzEwXzEyOSIgY3g9IjAiIGN5PSIwIiByPSIxIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgZ3JhZGllbnRUcmFuc2Zvcm09InRyYW5zbGF0ZSgxNi41NzAxIDE0KSBzY2FsZSgxOS44NjQxIDE5LjgzODMpIj4KPHN0b3Agb2Zmc2V0PSIwLjMwMTA1NiIgc3RvcC1vcGFjaXR5PSIwIi8%2BCjxzdG9wIG9mZnNldD0iMSIvPgo8L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM%2BCjwvc3ZnPgo%3D" alt="GitButler" />
+  </a>
+  <br />
+  <a href="https://github.com/djl-foundation/projektwoche/issues">
+   <img src="https://img.shields.io/github/issues/djl-foundation/projektwoche?style=flat-square" alt="GitHub issues" />
+  </a>
+  <a href="https://github.com/djl-foundation/projektwoche/pulls">
+   <img src="https://img.shields.io/github/issues-pr/djl-foundation/projektwoche?style=flat-square" alt="GitHub pull requests" />
+  </a>
+  <a href="https://github.com/djl-foundation/projektwoche/blob/main/LICENSE">
+   <img src="https://img.shields.io/github/license/djl-foundation/projektwoche?style=flat-square" alt="GitHub license" />
+  </a>
+  <br />
+  <a href="https://github.com/djl-foundation/projektwoche/stargazers">
+   <img src="https://img.shields.io/github/stars/djl-foundation/projektwoche?style=social" alt="GitHub stars" />
+  </a>
+  <a href="https://github.com/djl-foundation/projektwoche/graphs/contributors">
+   <img src="https://img.shields.io/github/contributors/djl-foundation/projektwoche?style=flat-square" alt="GitHub contributors" />
+  </a>
+  <a href="https://github.com/djl-foundation/projektwoche/commits">
+   <img src="https://img.shields.io/github/last-commit/djl-foundation/projektwoche?style=flat-square" alt="GitHub last commit" />
+  </a>
+</div>
 
-```sh
-npx create-turbo@latest
-```
+## About the Monorepo
 
-## What's inside?
+A monorepo for the project week "Nachhaltige Webentwicklung" at Gymnasium Athenaeum Stade, organized by Hackclub Stade in cooperation with the DJL Foundation.
 
-This Turborepo includes the following packages/apps:
+## About the Project Week
 
-### Apps and Packages
+The **project week "Nachhaltige Webentwicklung"** takes place at **Gymnasium Athenaeum Stade** (Harsefelder Straße 40, 21680 Stade, Lower Saxony) and is organized by **Hackclub Stade** under the DJL Foundation in cooperation with The Hack Foundation.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Goals of the Project Week
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+The project is designed to introduce students to web development and to complete at least **two projects** within one week:
 
-### Utilities
+1. **Personal Website** - Each student creates their own website.
+2. **Sustainability Project** - A website to concretize ideas on how IT/web/server technology can be made more sustainable.
 
-This Turborepo has some additional tools already setup for you:
+All created websites will be published under the domain **[prowo.hackclub-stade.de](https://prowo.hackclub-stade.de)**.
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### Lesson Plan
 
-### Build
+- **First 1.5 days**: HTML basics with the help of developed CLI tools.
+- **Following days**: Workshops based on [webdev.hackclub.com](https://webdev.hackclub.com).
+- **Final days**: Development of sustainability projects.
 
-To build all apps and packages, run the following command:
+### Reward System
 
-```
-cd my-turborepo
+In cooperation with Hackclub, a reward system will be implemented using the **YSWS (You Ship We Ship)** program - students who successfully host their websites will receive a small reward.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+## Repository Structure
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+This monorepo contains all tools and applications developed for the project week:
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### 🌐 Web Applications (`/apps`)
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+- **`web/`** - Main website ([prowo.hackclub-stade.de](https://prowo.hackclub-stade.de))
+  - Landing page with information about the project week.
+  - Download page for the setup CLI (`/setup`).
+  - Team page (`/team`).
+- **`projekte/`** - Microfrontend for student projects.
+  - Intelligent routing for student projects.
+  - Automatic hosting of HTML projects.
+  - Integration with the tutorial CLI.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+### 🛠️ CLI Tools
 
-### Develop
+#### Setup CLI (Rust) - `/rust/projektwoche-setup`
 
-To develop all apps and packages, run the following command:
+A cross-platform CLI tool for quickly setting up development environments:
 
-```
-cd my-turborepo
+- **Bundle**: `projektwoche` - Installs Node.js (via nvm), Bun, and VS Code.
+- **Features**: Parallel installation, dry-run mode, OS detection.
+- **Target Audience**: Teachers and students for quick laptop setup.
+- **Distribution**: Planned via npm as `@djl-foundation/projektwoche-cli` with binaries `prowo` and `projektwoche`.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+#### Tutorial CLI (Planned)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+An interactive learning CLI for HTML, CSS, and JavaScript:
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+- Exercises like "What is wrong with this code?"
+- Tutorials for HTML, CSS, and JS basics.
+- Automatic deployment of student projects.
+- Integration with the central repository.
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+### 📦 Shared Packages (`/packages`)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+- **`ui/`** - Shared React components.
+- **`eslint-config/`** - ESLint configurations.
+- **`typescript-config/`** - TypeScript configurations.
 
-### Remote Caching
+## Technology Stack
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+- **Frontend**: Next.js 15, React 19, TypeScript, TailwindCSS.
+- **Backend**: Vercel Microfrontends Architecture.
+- **CLI Tools**: Rust (Setup), TypeScript/Node.js (Tutorial, planned).
+- **Package Manager**: Bun.
+- **Monorepo**: Turbo.
+- **Hosting**: Vercel.
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## Contributors
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+- **Jack Ruder** - Lead Developer (jack@djl.foundation)
+- **Ole Gehrmann** - Junior Developer & Member of Hackclub Stade (ole@djl.foundation)
+- **Hackclub Stade** - Organization and execution.
+- **DJL Foundation** - Infrastructure and support.
 
-```
-cd my-turborepo
+## License
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+Apache License 2.0 - see [LICENSE](LICENSE) for details.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+## Links
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+- **Project Week Website**: [prowo.hackclub-stade.de](https://prowo.hackclub-stade.de)
+- **Setup CLI**: [prowo.hackclub-stade.de/setup](https://prowo.hackclub-stade.de/setup)
+- **Hackclub Stade**: Part of the DJL Foundation.
+- **Issues & Support**: [GitHub Issues](https://github.com/DJL-Foundation/projektwoche/issues)
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+---
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+_Developed with ❤️ for the students of Gymnasium Athenaeum Stade_

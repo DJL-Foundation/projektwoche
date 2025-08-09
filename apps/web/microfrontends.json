@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "projektwoche": {
+      "packageName": "web",
+      "development": {
+        "fallback": "prowo.hackclub-stade.de",
+        "local": "http://localhost:3900"
+      }
+    },
+    "projektwoche-projekte": {
+      "packageName": "projekte-microfrontend",
+      "routing": [
+        {
+          "paths": ["/projekte", "/projekte/:path*"]
+        }
+      ],
+      "development": {
+        "local": "http://localhost:3901"
+      }
+    }
+  },
+  "options": {
+    "localProxyPort": 3000
+  }
+}

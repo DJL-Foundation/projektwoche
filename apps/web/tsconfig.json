@@ -1,13 +1,16 @@
 {
-  "extends": "@repo/typescript-config/nextjs.json",
+  "extends": "prowo-tsc/nextjs.json",
   "compilerOptions": {
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "paths": {
+      "#env": ["./src/env.js"],
+      "#flags": ["./src/server/flags.ts"],
+      "#utility": ["./src/server/utility.ts"],
+      "~/*": ["./src/*"],
+      "@/*": ["./*"],
+    }
   },
   "include": [
+    "**/*.js",
     "**/*.ts",
     "**/*.tsx",
     "next-env.d.ts",

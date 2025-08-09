@@ -1,19 +1,40 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalEnv": ["NODE_ENV"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["check", "^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "FLAGS_SECRET",
+        "VERCEL_URL",
+        "HOST",
+        "PORT",
+        "HOST_URL",
+        "SKIP_ENV_VALIDATION"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
     },
-    "check-types": {
-      "dependsOn": ["^check-types"]
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "check": {
+      "dependsOn": ["lint", "typecheck"]
+    },
+    "format": {
+      "dependsOn": ["^format"]
     },
     "dev": {
+      "dependsOn": ["typecheck"],
+      "cache": false,
+      "persistent": true
+    },
+    "prowo-ui#shadcn": {
       "cache": false,
       "persistent": true
     }

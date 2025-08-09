@@ -1,0 +1,9 @@
+{
+  "extends": "prowo-tsc/base",
+  "compilerOptions": {
+    "outDir": "dist",
+    "allowJs": true
+  },
+  "include": ["src/**/*.ts", "eslint.config.js"],
+  "exclude": ["node_modules", "dist"]
+}
