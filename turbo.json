@@ -6,7 +6,6 @@
     "build": {
       "dependsOn": ["check", "^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-
       "outputs": [".next/**", "!.next/cache/**"],
       "env": [
         "FLAGS_SECRET",
@@ -33,6 +32,10 @@
       "dependsOn": ["typecheck"],
       "cache": false,
       "persistent": true
+    },
+    "prowo-ui#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "prowo-ui#shadcn": {
       "cache": false,

@@ -12,7 +12,11 @@
       "packageName": "projekte-microfrontend",
       "routing": [
         {
-          "paths": ["/projekte", "/projekte/:path*"]
+          "paths": [
+            "/projekte",
+            "/projekte/:path*",
+            "/.well-known/appspecific/com.chrome.devtools.json"
+          ]
         }
       ],
       "development": {

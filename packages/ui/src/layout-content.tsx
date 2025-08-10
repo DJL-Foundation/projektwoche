@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import type React from "react";
 import { VercelToolbar } from "@vercel/toolbar/next";
-import Header from "#layout/header";
-import Footer from "#layout/footer";
-import { Toaster } from "#ui/sonner";
+import Header from "./layout/header";
+import Footer from "./layout/footer";
+import { Toaster } from "./ui/sonner";
 
 interface LayoutContentProps {
   children: React.ReactNode;

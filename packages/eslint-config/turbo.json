@@ -3,7 +3,8 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "dependsOn": []
+      "dependsOn": [],
+      "outputs": ["./dist/**", "!./dist/eslint.config.js"]
     },
     "lint": {
       "dependsOn": ["build"]

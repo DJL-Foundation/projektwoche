@@ -5,16 +5,6 @@
     "outDir": "dist",
     "module": "ESNext",
     "moduleResolution": "node",
-    "paths": {
-      "#ui/*": ["src/ui/*"],
-      "#layout/*": ["src/layout/*"],
-      "#pages/*": ["src/pages/*"],
-      "#globals": ["src/styles/globals.css"],
-      "#styles/*": ["src/styles/*"],
-      "#lib/*": ["src/lib/*"],
-      "#hooks/*": ["src/hooks/*"],
-      "~/*": ["src/*"]
-    }
   },
   "include": ["src", "*.config.js"],
   "exclude": ["node_modules", "dist"]

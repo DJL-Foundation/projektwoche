@@ -2,13 +2,13 @@
 import { Moon, Sun } from "react-feather";
 import { useTheme } from "next-themes";
 
-import { Button } from "#ui/button";
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "#ui/dropdown-menu";
+} from "./ui/dropdown-menu";
 
 export function ThemeToggle() {
   const { setTheme } = useTheme();

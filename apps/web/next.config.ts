@@ -1,12 +1,13 @@
 import "./src/env.js";
-import { NextConfig } from "next";
+import { type NextConfig } from "next";
 import { withMicrofrontends } from "@vercel/microfrontends/next/config";
 import { withBotId } from "botid/next/config";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["prowo-ui"],
   experimental: {
     useCache: true,
-    ppr: true,
+    // ppr: true,
   },
   async rewrites() {
     return [
@@ -43,8 +44,8 @@ import withVercelToolbar from "@vercel/toolbar/plugins/next";
 
 const toolbarConfig = withVercelToolbar()(nextConfig);
 
-const microfrontendsConfig = withMicrofrontends(toolbarConfig);
+const microfrontendsConfig = withMicrofrontends(toolbarConfig) as NextConfig;
 
-const botIdConfig = withBotId(microfrontendsConfig);
+const botIdConfig = withBotId(microfrontendsConfig) as NextConfig;
 
 export default botIdConfig;

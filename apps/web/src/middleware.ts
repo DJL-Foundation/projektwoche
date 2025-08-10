@@ -3,6 +3,7 @@ import { runMicrofrontendsMiddleware } from "@vercel/microfrontends/next/middlew
 
 export async function middleware(request: NextRequest) {
   const response = await runMicrofrontendsMiddleware({
+    //@ts-expect-error internal shit
     request,
     flagValues: {},
   });

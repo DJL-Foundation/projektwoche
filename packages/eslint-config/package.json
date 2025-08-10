@@ -5,15 +5,15 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/base.js",
+      "import": "./dist/src/base.js",
       "types": "./src/base.ts"
     },
     "./next": {
-      "import": "./dist/next.js",
+      "import": "./dist/src/next.js",
       "types": "./src/next.ts"
     },
     "./react-internal": {
-      "import": "./dist/react-internal.js",
+      "import": "./dist/src/react-internal.js",
       "types": "./src/react-internal.ts"
     }
   },
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "prowo-tsc": "workspace:*",
-    "next": "^15.4.6",
+    "next": "15.4.0",
     "@next/eslint-plugin-next": "^15.4.2",
     "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.1",

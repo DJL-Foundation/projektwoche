@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Button } from "#ui/button";
+import { Button } from "../ui/button";
 import { AlertTriangle, LogIn, Home } from "react-feather";
-import { Card, CardContent } from "#ui/card";
+import { Card, CardContent } from "../ui/card";
 
 export default function Unauthorized() {
   return (

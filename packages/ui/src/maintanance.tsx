@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Button } from "#ui/button";
+import { Button } from "./ui/button";
 import { Home, ArrowLeft } from "react-feather";
 import { Wrench } from "lucide-react";
 

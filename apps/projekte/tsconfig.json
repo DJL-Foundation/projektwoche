@@ -1,17 +1,17 @@
 {
-  "extends": "prowo-tsc/nextjs.json",
-  "compilerOptions": {
-    "baseUrl": "./",
-    "paths": {
-      "~/*": ["./src/*"]
-    }
-  },
+  "extends": "astro/tsconfigs/strict",
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "next-env.d.ts",
-    "next.config.js",
-    ".next/types/**/*.ts"
+    ".astro/types.d.ts",
+    "**/*"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "dist"
+  ],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "plugins": [
+      { "name": "@astro/ts-plugin" }
+    ]
+  }
 }

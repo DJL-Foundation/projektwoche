@@ -8,7 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "#ui/select";
+} from "./ui/select";
 
 interface LanguageToggleProps {
   onChange: (language: "de" | "en") => void;

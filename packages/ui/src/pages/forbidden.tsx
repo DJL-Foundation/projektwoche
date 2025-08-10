@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "../lib/link";
 import { motion } from "motion/react";
-import { Button } from "#ui/button";
+import { Button } from "../ui/button";
 import { Shield, LogIn, Home } from "react-feather";
-import { Card, CardContent } from "#ui/card";
+import { Card, CardContent } from "../ui/card";
 
 export default function Forbidden() {
   return (
