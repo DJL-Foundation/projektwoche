@@ -7,7 +7,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ["prowo-ui"],
   experimental: {
     useCache: true,
-    // ppr: true,
+    ppr: true,
+    globalNotFound: true,
   },
   async rewrites() {
     return [

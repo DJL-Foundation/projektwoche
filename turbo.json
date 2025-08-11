@@ -1,13 +1,13 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV"],
   "tasks": {
     "build": {
       "dependsOn": ["check", "^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"],
       "env": [
+        "NODE_ENV",
         "FLAGS_SECRET",
         "VERCEL_URL",
         "HOST",
@@ -32,10 +32,6 @@
       "dependsOn": ["typecheck"],
       "cache": false,
       "persistent": true
-    },
-    "prowo-ui#build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
     },
     "prowo-ui#shadcn": {
       "cache": false,

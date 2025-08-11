@@ -15,7 +15,7 @@
     "@astrojs/react": "^4.3.0",
     "@astrojs/ts-plugin": "^1.10.4",
     "@astrojs/vercel": "^8.2.5",
-    "@types/react": "^19.1.9",
+    "@types/react": "19.1.0",
     "@types/react-dom": "^19.1.7",
     "@vercel/microfrontends": "^2.0.0",
     "astro": "^5.12.9",

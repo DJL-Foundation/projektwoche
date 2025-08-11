@@ -1,3 +1,6 @@
+"use client";
 import NotFound from "prowo-ui/pages/not-found";
 
-export default NotFound;
+export default function Page() {
+  return <NotFound />;
+}

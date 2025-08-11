@@ -24,7 +24,8 @@ const createContext = cache(async () => {
 const getQueryClient = cache(createQueryClient);
 const caller = createCaller(createContext);
 
-export const { trpc: api, HydrateClient } = createHydrationHelpers<AppRouter>(
-  caller,
-  getQueryClient,
-);
+const hydration: ReturnType<typeof createHydrationHelpers<AppRouter>> =
+  createHydrationHelpers<AppRouter>(caller, getQueryClient);
+
+export const api: typeof hydration.trpc = hydration.trpc;
+export const HydrateClient = hydration.HydrateClient;

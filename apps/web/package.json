@@ -62,11 +62,11 @@
     "flags": "^4.0.1",
     "geist": "^1.4.2",
     "neverthrow": "^8.2.0",
-    "next": "15.4.0",
+    "next": "15.4.2-canary.35",
     "posthog-js": "1.259.0",
     "prowo-ui": "workspace:*",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "superjson": "^2.2.2",
     "zod": "4.0.17"
   },
@@ -74,9 +74,9 @@
     "prowo-lint": "workspace:*",
     "prowo-tsc": "workspace:*",
     "@types/node": "^22.15.3",
-    "@types/react": "19.1.0",
+    "@types/react": "19.1.1",
     "@types/react-dom": "19.1.1",
     "eslint": "^9.31.0",
-    "typescript": "5.8.2"
+    "typescript": "5.9.2"
   }
 }

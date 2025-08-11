@@ -95,8 +95,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const shouldShowVercelToolbar = env.NODE_ENV === "development";
-  const beta = await devModeFlag();
+  const beta = env.NODE_ENV === "development";
+  const shouldShowVercelToolbar = await devModeFlag();
 
   return (
     <html lang="en">
