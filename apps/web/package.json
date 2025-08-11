@@ -68,7 +68,11 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "superjson": "^2.2.2",
-    "zod": "4.0.17"
+    "zod": "4.0.17",
+    "tailwindcss": "4.1.11",
+    "tw-animate-css": "1.3.6",
+    "postcss": "8.4.21",
+    "@tailwindcss/postcss": "^4.1.11"
   },
   "devDependencies": {
     "prowo-lint": "workspace:*",

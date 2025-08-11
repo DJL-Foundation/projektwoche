@@ -98,6 +98,7 @@
       "dependencies": {
         "@flags-sdk/posthog": "^0.2.0",
         "@t3-oss/env-nextjs": "^0.13.8",
+        "@tailwindcss/postcss": "^4.1.11",
         "@tanstack/react-query": "^5.84.2",
         "@trpc/client": "^11.4.4",
         "@trpc/react-query": "^11.4.4",
@@ -109,11 +110,14 @@
         "geist": "^1.4.2",
         "neverthrow": "^8.2.0",
         "next": "15.4.2-canary.35",
+        "postcss": "8.4.21",
         "posthog-js": "1.259.0",
         "prowo-ui": "workspace:*",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
         "superjson": "^2.2.2",
+        "tailwindcss": "4.1.11",
+        "tw-animate-css": "1.3.6",
         "zod": "4.0.17",
       },
       "devDependencies": {
@@ -2915,6 +2919,8 @@
     "web/@types/react-dom": ["@types/react-dom@19.1.1", "", { "peerDependencies": { "@types/react": "^19.0.0" } }, "sha512-jFf/woGTVTjUJsl2O7hcopJ1r0upqoq/vIOoCj0yLh3RIXxWcljlpuZ+vEBRXsymD1jhfeJrlyTy/S1UW+4y1w=="],
 
     "web/next": ["next@15.4.2-canary.35", "", { "dependencies": { "@next/env": "15.4.2-canary.35", "@swc/helpers": "0.5.15", "caniuse-lite": "^1.0.30001579", "postcss": "8.4.31", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "15.4.2-canary.35", "@next/swc-darwin-x64": "15.4.2-canary.35", "@next/swc-linux-arm64-gnu": "15.4.2-canary.35", "@next/swc-linux-arm64-musl": "15.4.2-canary.35", "@next/swc-linux-x64-gnu": "15.4.2-canary.35", "@next/swc-linux-x64-musl": "15.4.2-canary.35", "@next/swc-win32-arm64-msvc": "15.4.2-canary.35", "@next/swc-win32-x64-msvc": "15.4.2-canary.35", "sharp": "^0.34.3" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.51.1", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "dist/bin/next" } }, "sha512-HSEb8jSsaa2MZg6J9M7zX07yQz82K8NC70J1aWSZ7Dxh16yjjK5peC+ZPhrs2nRTLm2U7PETPzoFK0Jfbu4FAA=="],
+
+    "web/postcss": ["postcss@8.4.21", "", { "dependencies": { "nanoid": "^3.3.4", "picocolors": "^1.0.0", "source-map-js": "^1.0.2" } }, "sha512-tP7u/Sn/dVxK2NnruI4H9BG+x+Wxz6oeZ1cJ8P6G/PZY0IKk4k/63TDsQf2kQq3+qoJeLm2kIBUNlZe3zgb4Zg=="],
 
     "wrap-ansi/ansi-styles": ["ansi-styles@6.2.1", "", {}, "sha512-bN798gFfQX+viw3R7yrGWRqnrN2oRkEkUjjl4JNn4E8GxxbjtG3FbrEIIY3l8/hrwUwIeCZvi4QuOTP4MErVug=="],
 

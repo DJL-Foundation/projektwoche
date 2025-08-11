@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
   experimental: {
     useCache: true,
     ppr: true,
-    globalNotFound: true,
   },
   async rewrites() {
     return [

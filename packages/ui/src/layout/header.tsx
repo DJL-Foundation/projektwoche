@@ -28,7 +28,7 @@ export default function Header({
             <Link href="/" className="flex items-center space-x-2" prefetch>
               <div className="relative w-10 h-10">
                 <Image
-                  src={"logo.png"}
+                  src={"/logo.png"}
                   alt="Hackclub Stade Logo"
                   fill
                   className={`object-contain ${print ? "brightness-0" : ""}`}
