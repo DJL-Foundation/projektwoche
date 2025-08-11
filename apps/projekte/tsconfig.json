@@ -12,6 +12,14 @@
     "jsxImportSource": "react",
     "plugins": [
       { "name": "@astro/ts-plugin" }
-    ]
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "~/*": [
+        "./src/*"
+      ]
+    }
   }
 }

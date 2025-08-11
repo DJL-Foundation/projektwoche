@@ -3,7 +3,7 @@
 import Link from "../lib/link";
 import { motion } from "motion/react";
 import { Button } from "../ui/button";
-import { Shield, LogIn, Home } from "react-feather";
+import { Shield, Home } from "react-feather";
 import { Card, CardContent } from "../ui/card";
 
 export default function Forbidden() {
@@ -72,12 +72,6 @@ export default function Forbidden() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
-              <Button className="flex items-center gap-2" asChild>
-                <Link href="/sign-in" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </Link>
-              </Button>
               <Button variant="outline" asChild>
                 <Link href="/" className="flex items-center gap-2">
                   <Home className="h-4 w-4" />

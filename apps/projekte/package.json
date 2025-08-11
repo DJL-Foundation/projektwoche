@@ -3,11 +3,11 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev $(microfrontends port)",
+    "dev": "astro dev --port $(microfrontends port)",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 5",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write ."
   },

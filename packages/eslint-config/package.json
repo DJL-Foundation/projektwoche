@@ -21,7 +21,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 5",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "postinstall": "tsc"

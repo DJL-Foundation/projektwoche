@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    background: white !important;
+    color: black !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  img,
+  table,
+  figure {
+    page-break-inside: avoid;
+  }
+
+  ul,
+  ol,
+  dl {
+    page-break-before: avoid;
+  }
+
+  a {
+    text-decoration: underline;
+    color: #0000ee !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:text-black {
+    color: black !important;
+  }
+
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+  }
+}

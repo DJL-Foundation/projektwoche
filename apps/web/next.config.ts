@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
     ];
   },
   skipTrailingSlashRedirect: true,
+  turbopack: {},
 };
 
 import withVercelToolbar from "@vercel/toolbar/plugins/next";

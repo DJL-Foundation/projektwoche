@@ -13,6 +13,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["*.config.js"],
+    ignores: ["*.config.js", "dist"],
   },
 );
