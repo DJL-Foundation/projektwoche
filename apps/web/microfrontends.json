@@ -16,7 +16,9 @@
             "/projekte",
             "/projekte/:path*",
             "/@vite/client",
-            "/.well-known/appspecific/com.chrome.devtools.json"
+            "/.well-known/appspecific/com.chrome.devtools.json",
+            "/sitemap-index.xml",
+            "/sitemap-:path.xml"
           ]
         }
       ],

@@ -1,3 +1,17 @@
 @import "tailwindcss";
-@import "prowo-wind";
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Ledger&display=swap");
+@import "../../../../packages/ui/dist/styles/globals.css";
 @import "prowo-ui/globals.css";
+
+.geist-500 {
+  font-family: "Geist", sans-serif !important;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.ledger-regular {
+  font-family: "Ledger", serif !important;
+  font-weight: 400;
+  font-style: normal;
+}

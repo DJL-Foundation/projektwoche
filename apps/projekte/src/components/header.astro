@@ -1,0 +1,40 @@
+---
+export interface Props {
+  beta?: boolean; // Shows beta string
+  print?: boolean; // Print Styles and Full Text
+  class?: string;
+  [key: string]: any;
+}
+
+const { beta = false, print = false, class: className, ...props } = Astro.props;
+---
+
+<header
+  class={`bg-background ${print ? "border-b-2" : "border-b border-border"} ${className || ""}`}
+  {...props}
+>
+  <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <a href="/" class="flex items-center space-x-2">
+        <div class="relative w-10 h-10">
+          <img
+            src="/logo.png"
+            alt="Hackclub Stade Logo"
+            class={`w-full h-full object-contain ${print ? "brightness-0" : ""}`}
+          />
+        </div>
+        <span class="text-xl font-semibold">
+          Hackclub Stade - Projektwoche
+        </span>
+        {beta && (
+          <span class="text-xl font-semibold">&lt;Beta&gt;</span>
+        )}
+        {print && (
+          <span class="text-sm font-medium">
+            by The DJL Foundation
+          </span>
+        )}
+      </a>
+    </div>
+  </div>
+</header>

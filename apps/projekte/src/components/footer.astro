@@ -1,0 +1,110 @@
+---
+export interface Props {
+  beta?: boolean; // Shows beta badge
+  print?: boolean; // Print Styles and Full Text
+  class?: string;
+  [key: string]: any;
+}
+
+const { beta = false, print = false, class: className, ...props } = Astro.props;
+const currentYear = new Date().getFullYear();
+---
+
+<footer
+  class={`border-t border-border bg-gradient-to-r from-[#FF8C37]/20 to-[#EC3750]/20 py-8 ${print ? "bg-white text-black" : ""} ${className || ""}`}
+  {...props}
+>
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+      <div>
+        <p
+          class={`font-medium ${print ? "text-black" : "text-foreground"}`}
+        >
+          &ldquo;Nachhaltige Webentwicklung&rdquo; - a project by Hackclub
+          Stade
+        </p>
+        <p
+          class={`text-sm ${print ? "text-black" : "text-foreground"}`}
+        >
+          Made with ❤️ for Students by Students
+        </p>
+      </div>
+
+      {beta && (
+        <div
+          class="mx-auto flex items-center justify-center gap-2 rounded bg-yellow-100 px-3 py-1 text-yellow-800 shadow-md"
+        >
+          <span class="font-bold uppercase">Beta</span>
+          <span class="text-xs">
+            This is not public software — Confidential Beta Release.
+          </span>
+        </div>
+      )}
+
+      <div class="flex items-center gap-6">
+        {!print ? (
+          <>
+            {/* Normal links - hidden when printing */}
+            <a
+              href="https://github.com/djl-foundation/projektwoche"
+              class="text-foreground transition-colors hover:text-primary"
+            >
+              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span class="sr-only">GitHub</span>
+            </a>
+            <a
+              href="mailto:projektwoche@djl.foundation"
+              class="text-foreground transition-colors hover:text-primary"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              <span class="sr-only">Email</span>
+            </a>
+          </>
+        ) : (
+          <>
+            {/* Print-only links with text */}
+            <a
+              href="https://github.com/djl-foundation/projektwoche"
+              class="transition-colors hover:text-primary text-blue-700 no-underline"
+            >
+              <svg class="inline-block h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span class="ml-1">@djl-foundation</span>
+            </a>
+            <a
+              href="mailto:projektwoche@djl.foundation"
+              class="transition-colors hover:text-primary text-blue-700 no-underline"
+            >
+              <svg class="inline-block h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              <span class="ml-1">projektwoche@djl.foundation</span>
+            </a>
+          </>
+        )}
+      </div>
+    </div>
+
+    <div
+      class={`mt-6 border-t border-border/30 pt-6 text-center text-sm ${print ? "text-black" : "text-foreground"}`}
+    >
+      <div>
+        <p
+          class={`pt-1 text-center text-sm ${print ? "text-black" : "text-foreground"}`}
+        >
+          Hackclub Stade does not endorse any projects hosted by students
+          on our platform.
+        </p>
+      </div>
+      <p>
+        © {currentYear} By The DJL Foundation. All rights
+        reserved.
+      </p>
+    </div>
+  </div>
+</footer>

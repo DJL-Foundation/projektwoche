@@ -14,7 +14,7 @@
   "packageManager": "bun@1.2.19",
   "private": true,
   "scripts": {
-    "build": "turbo run build --filter=web",
+    "build": "turbo run build",
     "cb": "turbo run chill-build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
