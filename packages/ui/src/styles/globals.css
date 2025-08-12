@@ -43,6 +43,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* DJL Foundation Color Scheme */
+/* Light: https://www.realtimecolors.com/?colors=030b2e-f1f3f8-4a6cf7-8fa4f3-f4d03f */
+/* Dark: https://www.realtimecolors.com/?colors=e8ebf7-050a14-2e4bc6-1f2f5c-d946ef */
+/*
 @layer base {
   :root {
     --background: hsl(230, 60%, 96%);
@@ -114,16 +118,105 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.553 0.013 58.071);
   }
+} 
+*/
+
+/* Hackclub Stade Colour Scheme */
+/* Light: https://www.realtimecolors.com/?colors=2e0b03-fef3f1-ff6b37-ff9f8f-3ff4d0 */
+/* Dark: https://www.realtimecolors.com/?colors=f7ebe8-140a05-c62e4b-5c1f2f-46d9ef */
+@layer base {
+  :root {
+    --background: hsl(9, 87%, 97%);
+    --foreground: hsl(11, 88%, 10%);
+    --card: hsl(9, 87%, 97%);
+    --card-foreground: hsl(11, 88%, 10%);
+    --popover: hsl(9, 87%, 97%);
+    --popover-foreground: hsl(11, 88%, 10%);
+    --primary: hsl(16, 100%, 61%);
+    --primary-foreground: hsl(11, 88%, 10%);
+    --secondary: hsl(9, 100%, 78%);
+    --secondary-foreground: hsl(11, 88%, 10%);
+    --muted: hsl(9, 86%, 20%);
+    --muted-foreground: hsl(11, 88%, 70%);
+    --accent: hsl(168, 89%, 60%);
+    --accent-foreground: hsl(11, 88%, 10%);
+    --destructive: hsl(0, 85%, 60%);
+    --destructive-foreground: hsl(11, 88%, 10%);
+    --border: hsl(9, 86%, 20%);
+    --input: hsl(9, 86%, 20%);
+    --ring: hsl(168, 89%, 40%);
+    --chart-1: hsl(12, 76%, 61%);
+    --chart-2: hsl(173, 58%, 39%);
+    --chart-3: hsl(197, 37%, 24%);
+    --chart-4: hsl(43, 74%, 66%);
+    --chart-5: hsl(27, 87%, 67%);
+    --sidebar: oklch(0.985 0.001 106.423);
+    --sidebar-foreground: oklch(0.147 0.004 49.25);
+    --sidebar-primary: oklch(0.216 0.006 56.043);
+    --sidebar-primary-foreground: oklch(0.985 0.001 106.423);
+    --sidebar-accent: oklch(0.97 0.001 106.424);
+    --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
+    --sidebar-border: oklch(0.923 0.003 48.717);
+    --sidebar-ring: oklch(0.709 0.01 56.259);
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: hsl(20, 60%, 5%);
+    --foreground: hsl(12, 48%, 94%);
+    --card: hsl(20, 60%, 5%);
+    --card-foreground: hsl(12, 48%, 94%);
+    --popover: hsl(20, 60%, 5%);
+    --popover-foreground: hsl(12, 48%, 94%);
+    --primary: hsl(349, 62%, 48%);
+    --primary-foreground: hsl(12, 48%, 94%);
+    --secondary: hsl(343, 50%, 24%);
+    --secondary-foreground: hsl(12, 48%, 94%);
+    --muted: hsl(20, 61%, 80%);
+    --muted-foreground: hsl(12, 48%, 94%);
+    --accent: hsl(188, 84%, 61%);
+    --accent-foreground: hsl(20, 60%, 5%);
+    --destructive: hsl(0, 62%, 30%);
+    --destructive-foreground: hsl(12, 49%, 10%);
+    --border: hsl(20, 60%, 60%);
+    --input: hsl(20, 61%, 80%);
+    --ring: hsl(188, 84%, 60%);
+    --sidebar: oklch(0.216 0.006 56.043);
+    --sidebar-foreground: oklch(0.985 0.001 106.423);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0.001 106.423);
+    --sidebar-accent: oklch(0.268 0.007 34.298);
+    --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.553 0.013 58.071);
+  }
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
     outline-color: var(--color-ring);
+    font-family:
+      "Geist",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
   }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Ledger", Georgia, "Times New Roman", Times, serif;
   }
 }
 

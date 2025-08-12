@@ -3,6 +3,9 @@
   "tasks": {
     "build": {
       "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "chill-build": {
+      "dependsOn": ["lint"]
     }
   }
 }

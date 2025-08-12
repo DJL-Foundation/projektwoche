@@ -18,7 +18,7 @@ export default function Footer({
   return (
     <MotionConfig reducedMotion={print ? "always" : "user"}>
       <motion.footer
-        className={`border-t border-border bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 py-8 ${print ? "bg-white text-black" : ""}`}
+        className={`border-t border-border bg-gradient-to-r from-[#FF8C37]/20 to-[#EC3750]/20 py-8 ${print ? "bg-white text-black" : ""}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={!print ? { duration: 0.5, delay: 0.2 } : {}}
@@ -31,13 +31,13 @@ export default function Footer({
               transition={!print ? { duration: 0.5, delay: 0.3 } : {}}
             >
               <p
-                className={`font-medium ${print ? "text-black" : "text-muted-foreground"}`}
+                className={`font-medium ${print ? "text-black" : "text-foreground"}`}
               >
                 &ldquo;Nachhaltige Webentwicklung&rdquo; - a project by Hackclub
                 Stade
               </p>
               <p
-                className={`text-sm ${print ? "text-black" : "text-muted-foreground"}`}
+                className={`text-sm ${print ? "text-black" : "text-foreground"}`}
               >
                 Made with ❤️ for Students by Students
               </p>
@@ -69,7 +69,7 @@ export default function Footer({
                   <Link
                     href="/terms"
                     prefetch
-                    className="text-muted-foreground transition-colors hover:text-primary"
+                    className="text-foreground transition-colors hover:text-primary"
                   >
                     <Navigation className="h-5 w-5" />
                     <span className="sr-only">Terms</span>
@@ -77,21 +77,21 @@ export default function Footer({
                   <Link
                     href="/privacy"
                     prefetch
-                    className="text-muted-foreground transition-colors hover:text-primary"
+                    className="text-foreground transition-colors hover:text-primary"
                   >
                     <Shield className="h-5 w-5" />
                     <span className="sr-only">Privacy</span>
                   </Link>
                   <Link
                     href="https://github.com/djl-foundation/projektwoche"
-                    className="text-muted-foreground transition-colors hover:text-primary"
+                    className="text-foreground transition-colors hover:text-primary"
                   >
                     <GitHub className="h-5 w-5" />
                     <span className="sr-only">GitHub</span>
                   </Link>
                   <Link
                     href="mailto:projektwoche@djl.foundation"
-                    className="text-muted-foreground transition-colors hover:text-primary"
+                    className="text-foreground transition-colors hover:text-primary"
                   >
                     <Mail className="h-5 w-5" />
                     <span className="sr-only">Email</span>
@@ -120,7 +120,7 @@ export default function Footer({
           </div>
 
           <motion.div
-            className={`mt-6 border-t border-border/30 pt-6 text-center text-sm ${print ? "text-black" : "text-muted-foreground"}`}
+            className={`mt-6 border-t border-border/30 pt-6 text-center text-sm ${print ? "text-black" : "text-foreground"}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={!print ? { duration: 0.5, delay: 0.5 } : {}}
@@ -131,7 +131,7 @@ export default function Footer({
               transition={!print ? { duration: 0.5, delay: 0.35 } : {}}
             >
               <p
-                className={`pt-1 text-center text-sm ${print ? "text-black" : "text-muted-foreground"}`}
+                className={`pt-1 text-center text-sm ${print ? "text-black" : "text-foreground"}`}
               >
                 Hackclub Stade does not endorse any projects hosted by students
                 on our platform.

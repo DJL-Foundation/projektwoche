@@ -3,9 +3,20 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "dist",
+    "skipLibCheck": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "target": "ES2020",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx"
   },
-  "include": ["src", "*.config.js"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src",
+    "*.config.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

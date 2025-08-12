@@ -12,17 +12,19 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@astrojs/mdx": "^4.3.3",
     "@astrojs/react": "^4.3.0",
+    "@astrojs/sitemap": "^3.4.2",
     "@astrojs/ts-plugin": "^1.10.4",
     "@astrojs/vercel": "^8.2.5",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "^19.1.7",
+    "@tailwindcss/vite": "^4.1.11",
     "@vercel/microfrontends": "^2.0.0",
+    "@vercel/toolbar": "^0.1.38",
     "astro": "^5.12.9",
     "prowo-ui": "workspace:*",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "typescript": "^5.9.2"
+    "prowo-wind": "workspace:*",
+    "tailwindcss": "^4.1.11",
+    "vite-plugin-devtools-json": "^0.4.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.39.0",

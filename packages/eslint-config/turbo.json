@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": [],
-      "outputs": ["./dist/**", "!./dist/eslint.config.js"]
+      "outputs": ["./dist/**", "!./dist/eslint.config.*"]
     },
     "lint": {
       "dependsOn": ["build"]

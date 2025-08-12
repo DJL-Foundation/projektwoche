@@ -15,6 +15,19 @@
         "SKIP_ENV_VALIDATION"
       ]
     },
+    "chill-build": {
+      "dependsOn": ["check", "^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
+        "NODE_ENV",
+        "FLAGS_SECRET",
+        "VERCEL_URL",
+        "HOST",
+        "PORT",
+        "HOST_URL",
+        "SKIP_ENV_VALIDATION"
+      ]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },

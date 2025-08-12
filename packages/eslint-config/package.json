@@ -5,15 +5,15 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/src/base.js",
+      "import": "./dist/base.js",
       "types": "./src/base.ts"
     },
     "./next": {
-      "import": "./dist/src/next.js",
+      "import": "./dist/next.js",
       "types": "./src/next.ts"
     },
     "./react-internal": {
-      "import": "./dist/src/react-internal.js",
+      "import": "./dist/react-internal.js",
       "types": "./src/react-internal.ts"
     }
   },

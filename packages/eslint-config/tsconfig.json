@@ -2,8 +2,9 @@
   "extends": "prowo-tsc/base",
   "compilerOptions": {
     "outDir": "dist",
-    "allowJs": true
+    "allowJs": true,
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts", "eslint.config.js"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.d.ts"]
 }

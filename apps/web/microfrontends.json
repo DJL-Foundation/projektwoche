@@ -15,6 +15,7 @@
           "paths": [
             "/projekte",
             "/projekte/:path*",
+            "/@vite/client",
             "/.well-known/appspecific/com.chrome.devtools.json"
           ]
         }

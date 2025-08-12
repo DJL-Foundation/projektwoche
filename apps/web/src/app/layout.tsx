@@ -1,6 +1,7 @@
 import "./globals.css";
 
 import { GeistSans } from "geist/font/sans";
+import { Ledger } from "next/font/google";
 import type React from "react";
 import type { Metadata } from "next";
 import { ThemeProvider } from "prowo-ui/theme-provider";
@@ -12,6 +13,11 @@ import { PostHogProvider } from "~/server/providers";
 import env from "~/env";
 import LayoutContent from "prowo-ui/layout-content";
 import { devModeFlag } from "#flags";
+
+const ledger = Ledger({
+  subsets: ["latin"],
+  weight: ["400"],
+});
 
 export const metadata: Metadata = {
   title: "Nachhaltige Webentwicklung - Hackclub Stade",
@@ -100,7 +106,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${GeistSans.variable} antialiased`}>
+      <body className={`${GeistSans.variable} ${ledger.className} antialiased`}>
         <TRPCReactProvider>
           <BotIdClient
             protect={[
