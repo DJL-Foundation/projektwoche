@@ -5,7 +5,8 @@
   "private": true,
   "exports": {
     ".": "./src/globals.css",
-    "./postcss": "./src/postcss.config.js"
+    "./postcss": "./src/postcss.config.js",
+    "./shared-styles.css": "./src/shared-styles.css"
   },
   "devDependencies": {
     "postcss": "^8.5.6",

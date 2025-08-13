@@ -6,7 +6,7 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { checkBotId } from "botid/server";
@@ -98,9 +98,10 @@ const botIdMiddleware = t.middleware(async ({ next }) => {
   const botId = await checkBotId();
 
   if (botId.isBot) {
-    throw new Error(
-      "Unauthorized: Bots are not allowed to access this endpoint",
-    );
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Bots are not allowed to access this endpoint",
+    });
   }
 
   return next();

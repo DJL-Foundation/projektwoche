@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "../ui/button";
-import { AlertTriangle, Home } from "react-feather";
+import { AlertTriangle, Home } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 
 export default function Unauthorized() {

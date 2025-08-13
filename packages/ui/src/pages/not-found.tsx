@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "../ui/button";
-import { Search, Home, ArrowLeft } from "react-feather";
+import { Search, Home, ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (

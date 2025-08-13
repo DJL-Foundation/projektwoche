@@ -3,10 +3,10 @@ export interface Props {
   beta?: boolean; // Shows beta string
   print?: boolean; // Print Styles and Full Text
   class?: string;
-  [key: string]: any;
+  baseHref?: string; // Base URL for routing in MFE context
 }
 
-const { beta = false, print = false, class: className, ...props } = Astro.props;
+const { beta = false, print = false, class: className, baseHref, ...props } = Astro.props;
 ---
 
 <header
@@ -15,7 +15,7 @@ const { beta = false, print = false, class: className, ...props } = Astro.props;
 >
   <div class="container mx-auto px-4 py-4 flex items-center justify-between">
     <div class="flex items-center space-x-4">
-      <a href="/" class="flex items-center space-x-2">
+      <a href={baseHref || "/"} class="flex items-center space-x-2">
         <div class="relative w-10 h-10">
           <img
             src="/logo.png"

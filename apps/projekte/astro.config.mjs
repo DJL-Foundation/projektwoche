@@ -6,6 +6,7 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import { microfrontends } from "@vercel/microfrontends/experimental/vite";
 import vercel from "@astrojs/vercel";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 import mdx from "@astrojs/mdx";
 
@@ -27,8 +28,19 @@ const getHost = () => {
   if (process.env.HOST || process.env.PORT) {
     const host = process.env.HOST ?? "localhost";
     const port = process.env.PORT ?? "3000";
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    return `${protocol}://${host}${port !== "80" && port !== "443" ? `:${port}` : ""}`;
+    // Use PROTOCOL env var if available, otherwise infer from port
+    const protocol =
+      process.env.PROTOCOL ??
+      (port === "443"
+        ? "https"
+        : process.env.NODE_ENV === "production"
+          ? "https"
+          : "http");
+    // Only add port if it's non-standard for the protocol
+    const needsPort =
+      (protocol === "https" && port !== "443") ||
+      (protocol === "http" && port !== "80");
+    return `${protocol}://${host}${needsPort ? `:${port}` : ""}`;
   }
 
   // Development fallback
@@ -65,6 +77,7 @@ export default defineConfig({
       tailwindcss(),
       // @ts-ignore
       devtoolsJson(),
+      tsconfigPaths(),
     ],
   },
   adapter: vercel(),

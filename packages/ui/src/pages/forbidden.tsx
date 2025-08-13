@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "../lib/link";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "../ui/button";
-import { Shield, Home } from "react-feather";
+import { Shield, Home } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 
 export default function Forbidden() {

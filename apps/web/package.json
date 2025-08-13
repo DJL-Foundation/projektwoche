@@ -42,7 +42,7 @@
   },
   "scripts": {
     "build": "next build --turbo",
-    "dev": "next dev --turbo --port $(microfrontends port)",
+    "dev": "cross-env PORT=$(microfrontends port) next dev --turbo --port $PORT",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -77,6 +77,7 @@
     "prowo-tsc": "workspace:*",
     "prowo-wind": "workspace:*",
     "@types/node": "^22.15.3",
+    "cross-env": "^7.0.3",
     "eslint": "^9.31.0"
   }
 }

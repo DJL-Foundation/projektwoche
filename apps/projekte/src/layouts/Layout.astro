@@ -4,10 +4,15 @@ import PostHog from '../components/posthog.astro';
 import Header from "../components/header.astro";
 import Footer from "../components/footer.astro";
 
+export interface Props {
+  baseHref?: string;
+}
+
+const { baseHref } = Astro.props;
 const dev = !import.meta.env.PROD
 ---
 <!doctype html>
-<html lang="en">
+<html lang="de">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -17,16 +22,18 @@ const dev = !import.meta.env.PROD
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<meta name="generator" content={Astro.generator} />
 		<title>Projekte der Schüler von Nachhaltige Webentwicklung - Hackclub Stade</title>
-	</head>
-	<body class="min-h-screen geist-500">
+    <PostHog />
 		<script>
 			// Apply dark mode class based on localStorage
-			if (localStorage.getItem("theme") === "dark") {
-				document.body.classList.add("dark");
-			}
+			try {
+				if (localStorage.getItem("theme") === "dark") {
+					document.documentElement.classList.add("dark");
+				}
+			} catch (e) {}
 		</script>
-		<PostHog />
-		<Header beta={dev} />
+	</head>
+	<body class="min-h-screen geist-500">
+		<Header beta={dev} baseHref={baseHref} />
     <main class="min-h-[70vh]">
       <slot />
     </main>

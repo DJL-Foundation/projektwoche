@@ -38,16 +38,21 @@
     text-decoration: underline;
     color: #0000ee !important;
   }
+}
 
-  .print\:hidden {
-    display: none !important;
-  }
+@layer utilities {
+  @media print {
+    .print\:hidden {
+      display: none !important;
+    }
 
-  .print\:text-black {
-    color: black !important;
-  }
+    .print\:text-black {
+      color: black !important;
+    }
 
-  .print\:break-inside-avoid {
-    break-inside: avoid;
+    .print\:break-inside-avoid {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
   }
 }

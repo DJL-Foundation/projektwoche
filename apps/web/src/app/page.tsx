@@ -1,3 +1,3 @@
-import Unauthorized from "./unauthorised";
+import Maintenance from "prowo-ui/maintenance";
 
-export default Unauthorized;
+export default Maintenance;

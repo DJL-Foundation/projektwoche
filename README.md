@@ -1,5 +1,5 @@
 <div align="center">
-  <img align="center" width="128px" src="apps/web/public/logo.png" />
+  <img align="center" width="128px" src="apps/web/public/logo.png" alt="Projektwoche — Gymnasium Athenaeum Stade logo" />
   <h1 align="center"><b>Projektwoche - Monorepo</b></h1>
   <p align="center">
    <strong>Monorepo for the project "Nachhaltige Webentwicklung" at the Project Week of the <a href="https://athenaeum-stade.de">Gymnasium Athenaeum Stade</a></strong>

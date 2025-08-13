@@ -20,10 +20,13 @@ const ledger = Ledger({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(env.HOST_URL || "https://prowo.hackclub-stade.de"),
   title: "Nachhaltige Webentwicklung - Hackclub Stade",
   description:
     "Hackclub Stade hostet das Projekt 'Nachhaltige Webentwicklung' bei der Projektwoche des Gymnasium Athenaeum Stade. Lerne Webentwicklung und nachhaltige IT.",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
   generator: "Next.js",
   applicationName: "Nachhaltige Webentwicklung",
   referrer: "origin-when-cross-origin",
@@ -95,7 +98,9 @@ export const metadata: Metadata = {
     },
   },
   category: "Education",
-  classification: "Educational Project",
+  other: {
+    classification: "Educational Project",
+  },
 };
 
 export default async function RootLayout({
@@ -105,7 +110,7 @@ export default async function RootLayout({
   const shouldShowVercelToolbar = await devModeFlag();
 
   return (
-    <html lang="en">
+    <html lang="de" suppressHydrationWarning>
       <body className={`${GeistSans.variable} ${ledger.className} antialiased`}>
         <TRPCReactProvider>
           <BotIdClient

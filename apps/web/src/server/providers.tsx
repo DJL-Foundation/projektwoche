@@ -6,17 +6,22 @@ import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+let posthogInitialized = false;
+
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host: "/ingest",
-      ui_host: "https://eu.posthog.com",
-      person_profiles: "identified_only",
-      capture_pageview: false, // We capture pageviews manually
-      capture_pageleave: true, // Enable pageleave capture
-      capture_exceptions: true, // This enables capturing exceptions using Error Tracking, set to false if you don't want this
-      debug: process.env.NODE_ENV === "development",
-    });
+    if (!posthogInitialized) {
+      posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
+        api_host: "/ingest",
+        ui_host: "https://eu.posthog.com",
+        person_profiles: "identified_only",
+        capture_pageview: false, // We capture pageviews manually
+        capture_pageleave: true, // Enable pageleave capture
+        capture_exceptions: true, // This enables capturing exceptions using Error Tracking, set to false if you don't want this
+        debug: process.env.NODE_ENV === "development",
+      });
+      posthogInitialized = true;
+    }
   }, []);
 
   return (

@@ -916,7 +916,7 @@ export enum databaseInteractionTypes {
   /** Default database interaction */
   Default = "Default",
   /** Sequential database operation */
-  Sequencial = "Sequencial",
+  Sequential = "Sequential",
 }
 
 class ApiErrorSignal extends Error {

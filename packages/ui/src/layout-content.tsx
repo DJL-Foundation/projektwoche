@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import type React from "react";
 import { VercelToolbar } from "@vercel/toolbar/next";
@@ -21,12 +21,11 @@ export default function LayoutContent({
 }: LayoutContentProps) {
   const [isPrintMode, setIsPrintMode] = useState(false);
   const { setTheme, theme } = useTheme();
+  const originalThemeRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    let originalTheme: string | undefined;
-
     const handleBeforePrint = () => {
-      originalTheme = theme;
+      originalThemeRef.current = theme;
       setIsPrintMode(true);
       setTheme("light");
       setTimeout(() => {
@@ -36,20 +35,30 @@ export default function LayoutContent({
 
     const handleAfterPrint = () => {
       setIsPrintMode(false);
-      setTheme(originalTheme ?? "system");
+      setTheme(originalThemeRef.current ?? "system");
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check for Ctrl+P or Cmd+P
-      if ((event.ctrlKey || event.metaKey) && event.key === "p") {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") {
         event.preventDefault();
-        originalTheme = theme;
+        originalThemeRef.current = theme;
         setIsPrintMode(true);
         setTheme("light");
+        
+        // Create one-time print completion handler
+        const onAfterPrint = () => {
+          setIsPrintMode(false);
+          setTheme(originalThemeRef.current ?? "system");
+          window.removeEventListener("afterprint", onAfterPrint);
+        };
+        
+        window.addEventListener("afterprint", onAfterPrint);
+        
         setTimeout(() => {
           console.log("Print styles applied");
+          window.print();
         }, 100);
-        window.print();
       }
     };
 

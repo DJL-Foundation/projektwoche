@@ -17,19 +17,25 @@ const getHost = () => {
   if (process.env.HOST || process.env.PORT) {
     const host = process.env.HOST ?? "localhost";
     const port = process.env.PORT ?? "3000";
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    return `${protocol}://${host}${port !== "80" && port !== "443" ? `:${port}` : ""}`;
+    // Use PROTOCOL env var if available, otherwise infer from port
+    const protocol =
+      process.env.PROTOCOL ??
+      (port === "443"
+        ? "https"
+        : process.env.NODE_ENV === "production"
+          ? "https"
+          : "http");
+    // Only add port if it's non-standard for the protocol
+    const needsPort =
+      (protocol === "https" && port !== "443") ||
+      (protocol === "http" && port !== "80");
+    return `${protocol}://${host}${needsPort ? `:${port}` : ""}`;
   }
 
   // Development fallback
   return "http://localhost:3000";
 };
 const hostUrl = getHost();
-
-process.env.HOST_URL = hostUrl;
-
-// test
-process.env.NEXT_PUBLIC_HOST_URL = hostUrl;
 
 export const env = createEnv({
   server: {
@@ -39,6 +45,7 @@ export const env = createEnv({
       .default("development"),
   },
   client: {
+    NEXT_PUBLIC_HOST_URL: z.url().default(hostUrl),
     // Analytics
     NEXT_PUBLIC_POSTHOG_KEY: z.string(),
     NEXT_PUBLIC_POSTHOG_HOST: z.url(),
@@ -46,8 +53,8 @@ export const env = createEnv({
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_HOST_URL: process.env.NEXT_PUBLIC_HOST_URL,
-    HOST_URL: process.env.HOST_URL,
+    NEXT_PUBLIC_HOST_URL: hostUrl,
+    HOST_URL: hostUrl,
 
     // Analytics
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,

@@ -3,11 +3,12 @@
 import { motion, MotionConfig } from "motion/react";
 import Link from "next/link";
 import React from "react";
-import { GitHub, Mail, Navigation, Shield } from "react-feather";
+import { GitHub, Mail } from "react-feather";
+import { Navigation, Shield } from "lucide-react";
 
 interface FooterProps extends React.HTMLAttributes<HTMLDivElement> {
-  beta: boolean; // Shows beta badge
-  print: boolean; // Print Styles and Full Text
+  beta?: boolean; // Shows beta badge
+  print?: boolean; // Print Styles and Full Text
 }
 
 export default function Footer({

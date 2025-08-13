@@ -1,10 +1,10 @@
 "use client";
-import { env } from "#env";
+import env from "#env";
 import NextError from "next/error";
 import posthog from "posthog-js";
 import { useEffect } from "react";
 
-export default function Error({
+export default function GlobalError({
   error,
 }: {
   error: Error & { digest?: string };
