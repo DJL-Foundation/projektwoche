@@ -65,6 +65,8 @@
     "next": "15.4.2-canary.35",
     "posthog-js": "1.259.0",
     "prowo-ui": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "superjson": "^2.2.2",
     "zod": "4.0.17",
     "tailwindcss": "4.1.11",
