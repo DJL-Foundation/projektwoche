@@ -6,7 +6,15 @@ import { Button } from "../ui/button";
 import { AlertTriangle, Home } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 
-export default function Unauthorized() {
+interface UnauthorizedProps {
+  homeHref?: string;
+  homeLabel?: string;
+}
+
+export default function Unauthorized({
+  homeHref = "#",
+  homeLabel = "Return home",
+}: UnauthorizedProps) {
   return (
     <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
       <Card className="max-w-md w-full">
@@ -28,8 +36,8 @@ export default function Unauthorized() {
               }}
               className="mx-auto mb-8 relative"
             >
-              <div className="w-32 h-32 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto">
-                <AlertTriangle className="h-16 w-16 text-amber-500" />
+              <div className="w-32 h-32 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto" aria-hidden="true">
+                <AlertTriangle className="h-16 w-16 text-amber-500" aria-hidden="true" />
               </div>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -37,6 +45,7 @@ export default function Unauthorized() {
                 transition={{ delay: 0.6, duration: 0.3 }}
                 className="absolute top-0 right-0 w-10 h-10 bg-amber-500/20 rounded-full"
                 style={{ transform: "translate(25%, -25%)" }}
+                aria-hidden="true"
               />
               <motion.div
                 initial={{ opacity: 0 }}
@@ -44,6 +53,7 @@ export default function Unauthorized() {
                 transition={{ delay: 0.7, duration: 0.3 }}
                 className="absolute bottom-0 left-0 w-6 h-6 bg-amber-500/15 rounded-full"
                 style={{ transform: "translate(-25%, 25%)" }}
+                aria-hidden="true"
               />
             </motion.div>
 
@@ -72,9 +82,9 @@ export default function Unauthorized() {
               transition={{ duration: 0.4, delay: 0.5 }}
             >
               <Button variant="outline" asChild>
-                <Link href="/" className="flex items-center gap-2">
+                <Link href={homeHref} className="flex items-center gap-2">
                   <Home className="h-4 w-4" />
-                  Return Home
+                  {homeLabel}
                 </Link>
               </Button>
             </motion.div>

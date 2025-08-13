@@ -15,7 +15,8 @@
           "paths": [
             "/projekte",
             "/projekte/:path*",
-            "/@vite/client",
+            "/@vite/client/:path*",
+            "/_astro/:path*",
             "/.well-known/appspecific/com.chrome.devtools.json",
             "/sitemap-index.xml",
             "/sitemap-:path.xml"

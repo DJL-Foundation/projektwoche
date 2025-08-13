@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Button } from "./ui/button";
 import { Home, ArrowLeft } from "lucide-react";
@@ -15,6 +16,13 @@ export default function Maintenance({
   debug = true,
   message,
 }: MaintenanceProps) {
+  const router = useRouter();
+
+  const handleGoBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.back();
+  };
+
   return (
     <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
       <motion.div
@@ -95,13 +103,14 @@ export default function Maintenance({
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link
-              href="javascript:history.back()"
+            <button
+              onClick={handleGoBack}
               className="flex items-center gap-2"
+              aria-label="Go back to previous page"
             >
               <ArrowLeft className="h-4 w-4" />
               Go Back
-            </Link>
+            </button>
           </Button>
         </motion.div>
       </motion.div>

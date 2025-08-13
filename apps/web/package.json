@@ -42,7 +42,7 @@
   },
   "scripts": {
     "build": "next build --turbo",
-    "dev": "cross-env PORT=$(microfrontends port) next dev --turbo --port $PORT",
+    "dev": "next dev -p $(bunx microfrontends port) --turbo",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

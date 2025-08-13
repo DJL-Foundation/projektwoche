@@ -2,8 +2,9 @@
   "name": "projekte-microfrontend",
   "type": "module",
   "version": "0.0.1",
+  "private": true,
   "scripts": {
-    "dev": "cross-env PORT=$(bunx microfrontends port) astro dev --port $PORT",
+    "dev": "astro dev --port $(bunx microfrontends port)",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
