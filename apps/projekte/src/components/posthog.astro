@@ -1,0 +1,56 @@
+---
+// src/components/posthog.astro
+---
+<div id="posthog-container" 
+     data-posthog-key={import.meta.env.PUBLIC_POSTHOG_KEY} 
+     data-posthog-host={import.meta.env.PUBLIC_POSTHOG_HOST}>
+</div>
+<script is:inline type="text/javascript" id="posthog-js">
+  !(function(t, e) {
+    var o, n, p, r;
+    e.__SV ||
+      ((window.posthog = e),
+      (e._i = []),
+      (e.init = function(i, s, a) {
+        function g(t, e) {
+          var o = e.split('.');
+          2 == o.length && ((t = t[o[0]]), (e = o[1])),
+            (t[e] = function() {
+              t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
+            });
+        }
+        ((p = t.createElement('script')).type = 'text/javascript'),
+          (p.crossOrigin = 'anonymous'),
+          (p.async = true),
+          (p.src = s.api_host + '/static/array.js'),
+          (r = t.getElementsByTagName('script')[0]).parentNode.insertBefore(p, r);
+        var u = e;
+        void 0 !== a ? (u = e[a] = []) : (a = 'posthog');
+        u.people = u.people || [];
+        u.toString = function(t) {
+          var e = 'posthog';
+          return 'posthog' !== a && (e += '.' + a), t || (e += ' (stub)'), e;
+        };
+        u.people.toString = function() {
+          return u.toString(1) + '.people (stub)';
+        };
+        o =
+          'capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId'.split(
+            ' '
+          );
+        for (n = 0; n < o.length; n++) g(u, o[n]);
+        e._i.push([i, s, a]);
+      }),
+      (e.__SV = 1));
+  })(document, window.posthog || []);
+  
+  // Read configuration from data attributes
+  var container = document.getElementById('posthog-container');
+  var posthogKey = container.getAttribute('data-posthog-key');
+  var posthogHost = container.getAttribute('data-posthog-host');
+  
+  // Only initialize if both key and host are available
+  if (posthogKey && posthogHost) {
+    posthog.init(posthogKey, { api_host: posthogHost });
+  }
+</script>

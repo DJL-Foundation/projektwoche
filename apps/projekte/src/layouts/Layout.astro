@@ -1,0 +1,42 @@
+---
+import "~/styles/globals.css"
+import PostHog from '../components/posthog.astro';
+import Header from "../components/header.astro";
+import Footer from "../components/footer.astro";
+
+export interface Props {
+  baseHref?: string;
+}
+
+const { baseHref } = Astro.props;
+const dev = !import.meta.env.PROD
+---
+<!doctype html>
+<html lang="de">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<meta name="generator" content={Astro.generator} />
+		<title>Projekte der Schüler von Nachhaltige Webentwicklung - Hackclub Stade</title>
+    <PostHog />
+		<script>
+			// Apply dark mode class based on localStorage
+			try {
+				if (localStorage.getItem("theme") === "dark") {
+					document.documentElement.classList.add("dark");
+				}
+			} catch (e) {}
+		</script>
+	</head>
+	<body class="min-h-screen geist-500">
+		<Header beta={dev} baseHref={baseHref} />
+    <main class="min-h-[70vh]">
+      <slot />
+    </main>
+    <Footer beta={dev} />
+	</body>
+</html>

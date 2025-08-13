@@ -3,26 +3,81 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
+  "homepage": "https://prowo.hackclub-stade.de",
+  "icon": "https://prowo.hackclub-stade.de/favicon.ico",
+  "license": "Apache-2.0",
+  "l10n": "en",
+  "galleryBanner": {
+    "color": "#000000",
+    "theme": "dark"
+  },
+  "publisher": "DJL Foundation",
+  "description": "A monorepo for the project week \"Nachhaltige Webentwicklung\" at Gymnasium Athenaeum Stade, organized by Hackclub Stade in cooperation with the DJL Foundation.",
+  "keywords": [
+    "hackclub",
+    "hackathon",
+    "projectweek",
+    "nachhaltigkeit",
+    "webentwicklung",
+    "gymnasium",
+    "athenaeum",
+    "stade",
+    "djl-foundation",
+    "microfrontend",
+    "nextjs",
+    "react",
+    "typescript",
+    "monorepo",
+    "tailwindcss",
+    "JackatDJL"
+  ],
+  "bugs": {
+    "url": "https://github.com/DJL-Foundation/projektwoche/issues",
+    "email": "issues@djl.foundation"
+  },
+  "displayName": "Projektwoche",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DJL-Foundation/projektwoche.git"
+  },
   "scripts": {
-    "dev": "next dev --turbopack --port 3000",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "build": "next build --turbo",
+    "dev": "next dev -p $(bunx microfrontends port) --turbo",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "preview": "next build && next start",
+    "start": "next start"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
-    "next": "^15.4.2",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@flags-sdk/posthog": "^0.2.0",
+    "@t3-oss/env-nextjs": "^0.13.8",
+    "@tanstack/react-query": "^5.84.2",
+    "@trpc/client": "^11.4.4",
+    "@trpc/react-query": "^11.4.4",
+    "@trpc/server": "^11.4.4",
+    "@vercel/microfrontends": "^2.0.0",
+    "@vercel/toolbar": "0.1.38",
+    "botid": "1.4.5",
+    "flags": "^4.0.1",
+    "geist": "^1.4.2",
+    "neverthrow": "^8.2.0",
+    "next": "15.4.2-canary.35",
+    "posthog-js": "1.259.0",
+    "prowo-ui": "workspace:*",
+    "superjson": "^2.2.2",
+    "zod": "4.0.17",
+    "tailwindcss": "4.1.11",
+    "tw-animate-css": "1.3.6",
+    "postcss": "8.4.21",
+    "@tailwindcss/postcss": "^4.1.11"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "prowo-lint": "workspace:*",
+    "prowo-tsc": "workspace:*",
+    "prowo-wind": "workspace:*",
     "@types/node": "^22.15.3",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.1",
-    "eslint": "^9.31.0",
-    "typescript": "5.8.2"
+    "cross-env": "^7.0.3",
+    "eslint": "^9.31.0"
   }
 }

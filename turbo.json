@@ -3,17 +3,49 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["check", "^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "env": [
+        "NODE_ENV",
+        "FLAGS_SECRET",
+        "VERCEL_URL",
+        "HOST",
+        "PORT",
+        "HOST_URL",
+        "SKIP_ENV_VALIDATION"
+      ]
+    },
+    "chill-build": {
+      "dependsOn": ["check", "^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
+        "NODE_ENV",
+        "FLAGS_SECRET",
+        "VERCEL_URL",
+        "HOST",
+        "PORT",
+        "HOST_URL",
+        "SKIP_ENV_VALIDATION"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
     },
-    "check-types": {
-      "dependsOn": ["^check-types"]
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "check": {
+      "dependsOn": ["lint", "typecheck"]
+    },
+    "format": {
+      "dependsOn": ["^format"]
     },
     "dev": {
+      "dependsOn": ["typecheck"],
+      "cache": false,
+      "persistent": true
+    },
+    "prowo-ui#shadcn": {
       "cache": false,
       "persistent": true
     }
