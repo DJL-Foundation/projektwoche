@@ -8,6 +8,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      force-release:
+        description: "Force deployment"
+        required: false
+        default: "false"
 
 env:
   CARGO_TERM_COLOR: always
@@ -109,6 +114,16 @@ jobs:
             echo "EXECUTOR_CHECK=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: 🔎 Check for Force Deployment
+        id: check-force-deployment
+        run: |
+          echo "Checking if force deployment is enabled..."
+          if [[ "${{ github.event.inputs.force-release }}" == "true" ]]; then
+            echo "FORCE_DEPLOYMENT_CHECK=true" >> $GITHUB_OUTPUT
+          else
+            echo "FORCE_DEPLOYMENT_CHECK=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 🔎 Check version increment
         id: check-increment
         run: |
@@ -126,7 +141,7 @@ jobs:
       - name: 🔎 Assess Deployment Readiness
         id: assess-deployment
         run: |
-          if [[ ${{ steps.check-executor.outputs.EXECUTOR_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true' ]]; then
+          if [[ ${{ steps.check-executor.outputs.EXECUTOR_CHECK }} == 'true' || ${{ steps.check-force-deployment.outputs.FORCE_DEPLOYMENT_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true' ]]; then
             echo "Deployment is ready."
             echo "RUN_DEPLOY=true" >> $GITHUB_OUTPUT
           else
