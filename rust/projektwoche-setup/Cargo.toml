@@ -1,6 +1,6 @@
 [package]
 name = "projektwoche-setup"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jack Ruder <jack@djl.foundation>"]
 edition = "2024"
 description = "A fast and efficient CLI tool for setting up development environments using customizable software bundles."

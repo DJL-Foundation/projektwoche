@@ -88,7 +88,7 @@ pub trait AnyInstruction {
 /// When `silent` is enabled, the instruction will attempt various common
 /// silent installation flags if the custom arguments fail.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct DownloadAndExec {
+pub struct DownloadAndExec {
   /// URL to download the installer from
   url: &'static str,
   /// Whether to attempt silent installation
@@ -204,6 +204,7 @@ impl AnyInstruction for DownloadAndExec {
           return Err("MSI files can only be executed on Windows".into());
         }
       }
+      // TODO: ADD DEFAULT PM EXEC LIKE .deb .rpm ...
       "" => {
         // Handle Linux and macOS executables (no file extension)
         #[cfg(any(unix, target_os = "macos"))]
@@ -252,7 +253,7 @@ impl AnyInstruction for DownloadAndExec {
 /// Run::new("npm install -g yarn")
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Run {
+pub struct Run {
   /// Command split into program and arguments
   command: Vec<String>,
 }
@@ -290,7 +291,7 @@ impl AnyInstruction for Run {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct DownloadTo {
+pub struct DownloadTo {
   url: &'static str,
   path: &'static str,
 }
@@ -323,7 +324,7 @@ impl AnyInstruction for DownloadTo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Assert {
+pub struct Assert {
   command: Vec<String>,
   expect: &'static str,
 }
@@ -368,7 +369,7 @@ impl AnyInstruction for Assert {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct ExtractArchive {
+pub struct ExtractArchive {
   archive_path: &'static str,
   destination: &'static str,
 }
@@ -441,7 +442,7 @@ impl AnyInstruction for ExtractArchive {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct AddEnvVar {
+pub struct AddEnvVar {
   name: &'static str,
   value: &'static str,
 }
@@ -485,7 +486,7 @@ impl AnyInstruction for AddEnvVar {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct CreateShortcut {
+pub struct CreateShortcut {
   name: &'static str,
   target: &'static str,
   icon: Option<&'static str>,
@@ -554,7 +555,7 @@ impl AnyInstruction for CreateShortcut {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct WaitForCondition {
+pub struct WaitForCondition {
   check_command: Vec<String>,
   timeout_secs: u64,
 }
@@ -616,7 +617,7 @@ impl AnyInstruction for WaitForCondition {
 /// 
 /// The instruction tries managers in order until one succeeds.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct InstallPackage {
+pub struct InstallPackage {
   /// Name of the package to install
   package_name: &'static str,
 }
@@ -691,7 +692,7 @@ impl AnyInstruction for InstallPackage {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct CloneRepository {
+pub struct CloneRepository {
   url: &'static str,
   path: Option<&'static str>,
 }
@@ -734,7 +735,7 @@ impl AnyInstruction for CloneRepository {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct RequestSudo {
+pub struct RequestSudo {
   reason: &'static str,
 }
 
@@ -766,7 +767,7 @@ impl AnyInstruction for RequestSudo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct RestartService {
+pub struct RestartService {
   service_name: &'static str,
 }
 
@@ -823,7 +824,7 @@ impl AnyInstruction for RestartService {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct BackupFile {
+pub struct BackupFile {
   path: &'static str,
 }
 
@@ -856,7 +857,7 @@ impl AnyInstruction for BackupFile {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct EditFile {
+pub struct EditFile {
   path: &'static str,
   find: &'static str,
   replace: &'static str,
