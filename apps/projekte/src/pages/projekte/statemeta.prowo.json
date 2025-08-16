@@ -7,6 +7,12 @@
       "source_hash": "currently writing schemas and cli this it out of service",
       "target_host_path": "jack/boba-beispiel",
       "type": "html"
+    },
+    {
+      "source_repo_path": "/jack/toppings-beispiel",
+      "source_hash": "currently writing schemas and cli this it out of service",
+      "target_host_path": "jack/toppings-beispiel",
+      "type": "html"
     }
   ]
 }
