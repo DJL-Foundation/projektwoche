@@ -15,6 +15,7 @@
 - [ ] Implement Tutorial / Quickstart CLI
 - [ ] Write Tutorials for HTML, CSS, JS
 - [ ] Write commands that push that code to a central distrobution repository and a cron / webhook that pulls that code into this monorepo at the projekte microfrontend
+- [ ] implement the json schemas
 
 ### Setup CLI (Rust)
 
