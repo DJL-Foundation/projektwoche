@@ -8,6 +8,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      force-release:
+        description: "Force deployment"
+        required: false
+        default: "false"
 
 env:
   CARGO_TERM_COLOR: always
@@ -109,6 +114,16 @@ jobs:
             echo "EXECUTOR_CHECK=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: 🔎 Check for Force Deployment
+        id: check-force-deployment
+        run: |
+          echo "Checking if force deployment is enabled..."
+          if [[ "${{ github.event.inputs.force-release }}" == "true" ]]; then
+            echo "FORCE_DEPLOYMENT_CHECK=true" >> $GITHUB_OUTPUT
+          else
+            echo "FORCE_DEPLOYMENT_CHECK=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 🔎 Check version increment
         id: check-increment
         run: |
@@ -126,7 +141,7 @@ jobs:
       - name: 🔎 Assess Deployment Readiness
         id: assess-deployment
         run: |
-          if [[ ${{ steps.check-executor.outputs.EXECUTOR_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true' ]]; then
+          if [[ ${{ steps.check-executor.outputs.EXECUTOR_CHECK }} == 'true' || ${{ steps.check-force-deployment.outputs.FORCE_DEPLOYMENT_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true' ]]; then
             echo "Deployment is ready."
             echo "RUN_DEPLOY=true" >> $GITHUB_OUTPUT
           else
@@ -153,7 +168,7 @@ jobs:
 
   # Build all Rust projects
   build:
-    name: 🔧 Build ${{ matrix.project_name }} for ${{ matrix.target }}
+    name: 🔧 Build Rust Projects
     needs: allow-run
     if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: ${{ matrix.runs-on }}
@@ -249,7 +264,7 @@ jobs:
 
   # Run cargo tests for all projects except projektwoche-setup
   test:
-    name: 🧪 Unit Tests for ${{ matrix.project_name }}
+    name: 🧪 Run Unit Tests
     needs: allow-run
     if: needs.allow-run.outputs.RUN_CI == 'true'
     runs-on: blacksmith-8vcpu-ubuntu-2404
@@ -280,7 +295,7 @@ jobs:
           cargo test --bin ${{ matrix.project_name }}
 
   test-prowo-interaction:
-    name: ${{ matrix.os-icon }} [PROWO] ${{ matrix.os }} Interaction Test
+    name: 🕹️ [PROWO] Interaction Tests
     needs:
       - build
       - allow-run
@@ -291,7 +306,6 @@ jobs:
       matrix:
         include:
           - os: windows
-            os-icon: 🪟
             runs-on: windows-latest
             target: x86_64-pc-windows-msvc
             binary-name: projektwoche-setup.exe
@@ -300,7 +314,6 @@ jobs:
             uninstall-keywords: |
               ["Uninstalling program: Node.js", "Uninstalling program: Bun", "Uninstalling program: Visual Studio Code", "Deinstallation abgeschlossen"]
           - os: linux
-            os-icon: 🐧
             runs-on: blacksmith-4vcpu-ubuntu-2404
             target: x86_64-unknown-linux-gnu
             binary-name: projektwoche-setup
@@ -309,7 +322,6 @@ jobs:
             uninstall-keywords: |
               ["Uninstalling program: Node.js", "Uninstalling program: Bun", "Uninstalling program: Visual Studio Code", "Deinstallation abgeschlossen"]
           - os: macos
-            os-icon: 🍎
             runs-on: macos-latest
             target: x86_64-apple-darwin
             binary-name: projektwoche-setup
@@ -326,19 +338,24 @@ jobs:
           name: projektwoche-setup-${{ matrix.target }}
           path: ./bin
 
-      - name: ⚙️ Make binary executable and move ${{ matrix.os-icon }}
+      - name: ⚙️ Make binary executable and move 🪟
         if: matrix.os == 'windows'
         run: Move-Item "./bin/${{ matrix.binary-name }}" "./${{ matrix.binary-name }}" -Force
         shell: powershell
 
-      - name: ⚙️ Make binary executable and move ${{ matrix.os-icon }}
+      - name: ⚙️ Make binary executable and move 🐧 & 🍎
         if: matrix.os == 'linux' || matrix.os == 'macos'
         run: |
           chmod +x ./bin/${{ matrix.binary-name }}
           mv ./bin/${{ matrix.binary-name }} ./${{ matrix.binary-name }}
         shell: bash
 
-      - name: 🔍 Test dry-run installation ${{ matrix.os-icon }}
+      - name: ⚙️ Make checks executable
+        if: matrix.os == 'linux' || matrix.os == 'macos'
+        run: |
+          chmod +x ./scripts/check_keywords.sh
+
+      - name: 🔍 Test dry-run installation 🪟
         if: matrix.os == 'windows'
         run: |
           Write-Host "Testing dry-run installation..."
@@ -346,7 +363,7 @@ jobs:
           Get-Content dry-install-log.txt
         shell: powershell
 
-      - name: 🔍 Test dry-run installation ${{ matrix.os-icon }}
+      - name: 🔍 Test dry-run installation 🐧 & 🍎
         if: matrix.os == 'linux' || matrix.os == 'macos'
         run: |
           echo "Testing dry-run installation..."
@@ -360,7 +377,7 @@ jobs:
           ./scripts/check_keywords.sh dry-install-log.txt '${{ toJson(fromJSON(matrix.install-keywords)) }}'
         shell: bash
 
-      - name: 🗑️ Test dry-run uninstallation ${{ matrix.os-icon }}
+      - name: 🗑️ Test dry-run uninstallation 🪟
         if: matrix.os == 'windows'
         run: |
           Write-Host "Testing dry-run uninstallation..."
@@ -369,7 +386,7 @@ jobs:
         shell: powershell
         continue-on-error: true
 
-      - name: 🗑️ Test dry-run uninstallation ${{ matrix.os-icon }}
+      - name: 🗑️ Test dry-run uninstallation 🐧 & 🍎
         if: matrix.os == 'linux' || matrix.os == 'macos'
         run: |
           echo "Testing dry-run uninstallation..."
@@ -496,7 +513,7 @@ jobs:
           retention-days: 7
 
   test-prowo-docker:
-    name: 🐳 [PROWO] ${{ matrix.platform }} Docker Test
+    name: 🐳 [PROWO] Docker Tests
     needs:
       - allow-run
       - build
