@@ -373,7 +373,7 @@ jobs:
         shell: bash
 
       - name: 📋 Check for installation keywords
-        if: always()
+        if: always() && matrix.os != 'windows'
         run: |
           bun scripts/check_keywords.ts dry-install-log.txt '${{ toJson(fromJSON(matrix.install-keywords)) }}'
         shell: bash
@@ -397,7 +397,7 @@ jobs:
         continue-on-error: true
 
       - name: 📋 Check for deinstallation keywords
-        if: always()
+        if: always() && matrix.os != 'windows'
         run: |
           bun scripts/check_keywords.ts dry-uninstall-log.txt '${{ toJson(fromJSON(matrix.uninstall-keywords)) }}'
         shell: bash

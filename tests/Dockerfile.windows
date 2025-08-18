@@ -1,6 +1,6 @@
 # escape=`
 
-FROM mcr.microsoft.com/windows/servercore:ltsc2022
+FROM microsoft/windows-server:ltsc2025
 
 # Set PowerShell as the default shell
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
@@ -37,7 +37,7 @@ COPY . .
 RUN cargo build --release --manifest-path rust/projektwoche-setup/Cargo.toml
 
 # Add the binary to PATH
-ENV PATH="C:\app\rust\projektwoche-setup\target\release;${PATH}"
+ENV PATH="C:\app\target\release;${PATH}"
 
 # Set the default command to run installation and verification
 CMD ["powershell", "-Command", "projektwoche-setup.exe install projektwoche; if ($LASTEXITCODE -eq 0) { bun scripts/setup-tests.ts projektwoche } else { exit $LASTEXITCODE }"]
