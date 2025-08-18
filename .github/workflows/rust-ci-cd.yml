@@ -350,10 +350,11 @@ jobs:
           mv ./bin/${{ matrix.binary-name }} ./${{ matrix.binary-name }}
         shell: bash
 
-      - name: ⚙️ Make checks executable
-        if: matrix.os == 'linux' || matrix.os == 'macos'
-        run: |
-          chmod +x ./scripts/check_keywords.sh
+      - name: 🦀 Install Bun
+        if: matrix.os == 'linux' || matrix.os == 'macos' || matrix.os == 'windows'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: 🔍 Test dry-run installation 🪟
         if: matrix.os == 'windows'
@@ -374,7 +375,7 @@ jobs:
       - name: 📋 Check for installation keywords
         if: always()
         run: |
-          ./scripts/check_keywords.sh dry-install-log.txt '${{ toJson(fromJSON(matrix.install-keywords)) }}'
+          bun scripts/check_keywords.ts dry-install-log.txt '${{ toJson(fromJSON(matrix.install-keywords)) }}'
         shell: bash
 
       - name: 🗑️ Test dry-run uninstallation 🪟
@@ -398,7 +399,7 @@ jobs:
       - name: 📋 Check for deinstallation keywords
         if: always()
         run: |
-          ./scripts/check_keywords.sh dry-uninstall-log.txt '${{ toJson(fromJSON(matrix.uninstall-keywords)) }}'
+          bun scripts/check_keywords.ts dry-uninstall-log.txt '${{ toJson(fromJSON(matrix.uninstall-keywords)) }}'
         shell: bash
         continue-on-error: true
 
