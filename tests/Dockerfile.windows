@@ -1,6 +1,6 @@
 # escape=`
 
-FROM microsoft/windows-server:ltsc2025
+FROM mcr.microsoft.com/windows/server:ltsc2025
 
 # Set PowerShell as the default shell
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]

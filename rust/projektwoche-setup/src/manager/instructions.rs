@@ -50,7 +50,6 @@
 //! install_node.run(false)?; // Actually executes
 //! ```
 
-use regex::Regex;
 use std::fs;
 use std::io::Write;
 use std::path::Path;

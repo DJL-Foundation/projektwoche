@@ -41,16 +41,10 @@ impl Default for Architectures {
   fn default() -> Self {
     match get().architecture() {
       Some("x86_64") => Architectures::X86_64,
-
       Some("aarch64") => Architectures::AArch64,
       _ => {
-        eprintln!("Unsupported architecture detected.");
-
-        return Architectures::X86_64;
-
-        return Architectures::AArch64;
-        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-        panic!("Unsupported architecture");
+        eprintln!("Unsupported architecture detected, defaulting to x86_64.");
+        Architectures::X86_64
       }
     }
   }

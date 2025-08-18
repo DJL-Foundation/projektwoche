@@ -43,18 +43,17 @@ pub fn nodejs() -> Package {
   Package::new("Node.js", "JavaScript runtime").add_mapping(
     OsMatcher::from_category(OsCategory::Windows),
     InstructionMapping::new().add_install_instructions(vec![
-      Instruction::new("Install nvm").cmd("wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"),      Instruction::new("Install Node.js").cmd("nvm install latest"),
-      Instruction::new("Set Node.js version").cmd("nvm use latest"),
-      Instruction::new("Add Node.js to PATH").cmd("setx PATH \"%PATH%;%NVM_HOME%\\nodejs\\node_modules\\.bin\""),
+      Instruction::new("Download nvm-windows").cmd("powershell -Command \"Invoke-WebRequest -Uri 'https://github.com/coreybutler/nvm-windows/releases/download/1.1.12/nvm-setup.exe' -OutFile 'nvm-setup.exe'\""),
+      Instruction::new("Install nvm-windows").cmd("powershell -Command \"Start-Process -FilePath 'nvm-setup.exe' -ArgumentList '/SILENT' -Wait\""),
+      Instruction::new("Refresh environment").cmd("powershell -Command \"refreshenv\""),
+      Instruction::new("Install Node.js").cmd("powershell -Command \"nvm install latest\""),
+      Instruction::new("Use Node.js").cmd("powershell -Command \"nvm use latest\""),
     ]),
   ).add_mapping(
     OsMatcher::from_category(OsCategory::LinuxBased),
     InstructionMapping::new().add_install_instructions(vec![
       Instruction::new("Install nvm").cmd("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"),
-      Instruction::new("Install Node.js").cmd("nvm install latest"),
-      Instruction::new("Set Node.js version").cmd("nvm use latest"),
-      Instruction::new("Add Node.js to PATH").cmd("echo 'export PATH=\"$PATH:$HOME/.nvm/versions/node/$(nvm version)/bin\"' >> ~/.bashrc"),
-      Instruction::new("Reload shell").cmd("source ~/.bashrc"),
+      Instruction::new("Source nvm and install Node.js").cmd("bash -c 'source ~/.bashrc && nvm install node && nvm use node && nvm alias default node'"),
     ]),
   )
 }
@@ -86,12 +85,14 @@ pub fn bun() -> Package {
       OsMatcher::from_category(OsCategory::Windows),
       InstructionMapping::new().add_install_instructions(vec![
         Instruction::new("Install Bun").cmd("powershell -c \"irm bun.sh/install.ps1 | iex\""),
+        Instruction::new("Refresh environment").cmd("powershell -Command \"refreshenv\""),
       ]),
     )
     .add_mapping(
       OsMatcher::from_category(OsCategory::LinuxBased),
       InstructionMapping::new().add_install_instructions(vec![
         Instruction::new("Install Bun").cmd("curl -fsSL https://bun.sh/install | bash"),
+        Instruction::new("Source Bun environment").cmd("bash -c 'source ~/.bashrc'"),
       ]),
     )
 }
