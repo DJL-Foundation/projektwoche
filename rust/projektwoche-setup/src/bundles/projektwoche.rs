@@ -28,7 +28,7 @@
 //! 3. Each tool is configured for optimal educational use
 
 use crate::manager::SoftwareBundle;
-use crate::packages::{ide, js};
+use crate::packages::{apps, ide, js};
 
 /// Creates the Projektwoche software bundle.
 /// 
@@ -60,7 +60,9 @@ use crate::packages::{ide, js};
 /// ```
 pub fn bundle() -> SoftwareBundle {
   SoftwareBundle::new("Projektwoche", "A Bundle containing Packages to set up a development environment for the Projektwoche of the Athenaeum Stade")
+      .add_program(apps::git())
       .add_program(js::nodejs())
       .add_program(js::bun())
       .add_program(ide::vscode())
+      .add_program(apps::chrome())
 }

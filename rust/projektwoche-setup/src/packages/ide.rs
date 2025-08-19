@@ -52,28 +52,32 @@ pub fn vscode() -> Package {
   Package::new("Visual Studio Code", "Code editor")
   .add_mapping(
     OsMatcher::from_category(OsCategory::Windows),
-    InstructionMapping::new().add_install_instructions(vec![
-      Instruction::new("Download VSCode").download_and_exec(
-        "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user",
-      ),
-    ]),
+    InstructionMapping::new()
+      .add_prerequisite_checks(vec![
+        Instruction::new("Check if VSCode is installed").assert("code --version", "."),
+      ])
+       .add_install_instructions(vec![
+         Instruction::new("Install VSCode").install_application("Microsoft.VisualStudioCode"),
+       ]),
   )
   .add_mapping(
     OsMatcher::from_category(OsCategory::RHELBased),
-    InstructionMapping::new().add_install_instructions(vec![
-      Instruction::new("Download VSCode").install_package(
-        "vscode",
-      ),
-    ]),
+    InstructionMapping::new()
+      .add_prerequisite_checks(vec![
+        Instruction::new("Check if VSCode is installed").assert("code --version", "."),
+      ])
+       .add_install_instructions(vec![
+         Instruction::new("Install VSCode").install_application("code"),
+       ]),
   )
   .add_mapping(
     OsMatcher::from_category(OsCategory::DebianBased),
-    InstructionMapping::new().add_install_instructions(vec![
-      Instruction::new("Add Microsoft GPG key").cmd("wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg"),
-      Instruction::new("Install GPG key").cmd("sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/"),
-      Instruction::new("Add VSCode repository").cmd("sudo sh -c 'echo \"deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\" > /etc/apt/sources.list.d/vscode.list'"),
-      Instruction::new("Update package list").cmd("sudo apt update"),
-      Instruction::new("Install VSCode").install_package("code"),
-    ]),
+    InstructionMapping::new()
+      .add_prerequisite_checks(vec![
+        Instruction::new("Check if VSCode is installed").assert("code --version", "."),
+      ])
+      .add_install_instructions(vec![
+        Instruction::new("Install VSCode").install_application("code"),
+      ]),
   )
 }

@@ -42,19 +42,23 @@ use crate::manager::{InstructionMapping, Package};
 pub fn nodejs() -> Package {
   Package::new("Node.js", "JavaScript runtime").add_mapping(
     OsMatcher::from_category(OsCategory::Windows),
-    InstructionMapping::new().add_install_instructions(vec![
-      Instruction::new("Download nvm-windows").cmd("powershell -Command \"Invoke-WebRequest -Uri 'https://github.com/coreybutler/nvm-windows/releases/download/1.1.12/nvm-setup.exe' -OutFile 'nvm-setup.exe'\""),
-      Instruction::new("Install nvm-windows").cmd("powershell -Command \"Start-Process -FilePath 'nvm-setup.exe' -ArgumentList '/SILENT' -Wait\""),
-      Instruction::new("Refresh environment").cmd("powershell -Command \"refreshenv\""),
-      Instruction::new("Install Node.js").cmd("powershell -Command \"nvm install latest\""),
-      Instruction::new("Use Node.js").cmd("powershell -Command \"nvm use latest\""),
-    ]),
+    InstructionMapping::new()
+      .add_prerequisite_checks(vec![
+        Instruction::new("Check if Node.js is installed").assert("node --version", "v"),
+      ])
+      .add_install_instructions(vec![
+        Instruction::new("Install Node.js").install_application("OpenJS.NodeJS"),
+      ]),
   ).add_mapping(
     OsMatcher::from_category(OsCategory::LinuxBased),
-    InstructionMapping::new().add_install_instructions(vec![
-      Instruction::new("Install nvm").cmd("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"),
-      Instruction::new("Source nvm and install Node.js").cmd("bash -c 'source ~/.bashrc && nvm install node && nvm use node && nvm alias default node'"),
-    ]),
+    InstructionMapping::new()
+      .add_prerequisite_checks(vec![
+        Instruction::new("Check if Node.js is installed").assert("node --version", "v"),
+      ])
+      .add_install_instructions(vec![
+        Instruction::new("Install nvm").cmd("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"),
+        Instruction::new("Source nvm and install Node.js").cmd("bash -c 'source ~/.bashrc && nvm install node && nvm use node && nvm alias default node'"),
+      ]),
   )
 }
 
@@ -83,16 +87,23 @@ pub fn bun() -> Package {
   Package::new("Bun", "JavaScript runtime and package manager")
     .add_mapping(
       OsMatcher::from_category(OsCategory::Windows),
-      InstructionMapping::new().add_install_instructions(vec![
-        Instruction::new("Install Bun").cmd("powershell -c \"irm bun.sh/install.ps1 | iex\""),
-        Instruction::new("Refresh environment").cmd("powershell -Command \"refreshenv\""),
-      ]),
+      InstructionMapping::new()
+        .add_prerequisite_checks(vec![
+          Instruction::new("Check if Bun is installed").assert("bun --version", "."),
+        ])
+        .add_install_instructions(vec![
+          Instruction::new("Install Bun").install_application("Oven-sh.Bun"),
+        ]),
     )
     .add_mapping(
       OsMatcher::from_category(OsCategory::LinuxBased),
-      InstructionMapping::new().add_install_instructions(vec![
-        Instruction::new("Install Bun").cmd("curl -fsSL https://bun.sh/install | bash"),
-        Instruction::new("Source Bun environment").cmd("bash -c 'source ~/.bashrc'"),
-      ]),
+      InstructionMapping::new()
+        .add_prerequisite_checks(vec![
+          Instruction::new("Check if Bun is installed").assert("bun --version", "."),
+        ])
+        .add_install_instructions(vec![
+          Instruction::new("Install Bun").cmd("curl -fsSL https://bun.sh/install | bash"),
+          Instruction::new("Source Bun environment").cmd("bash -c 'source ~/.bashrc'"),
+        ]),
     )
 }

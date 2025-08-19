@@ -18,6 +18,7 @@
 //! - **macOS**: `~/Library/Application Support/prowo-setup/config.toml`
 //! - **Linux**: `~/.config/prowo-setup/config.toml`
 
+pub mod interactive;
 pub mod machine;
 
 use confy::ConfyError;

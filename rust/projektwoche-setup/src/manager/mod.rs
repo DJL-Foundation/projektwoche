@@ -62,12 +62,15 @@ type ConfigurationInstructions = InstructionSet<instructions::Instructions>;
 /// 
 /// # Operations Supported
 /// 
+/// - **Prerequisites**: Check if software is already installed before proceeding
 /// - **Installation**: Download and install the software
 /// - **Uninstallation**: Remove the software from the system  
 /// - **Configuration**: Apply settings and configurations after installation
 /// - **Deconfiguration**: Revert configurations during uninstallation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InstructionMapping {
+  /// Instructions for checking if the software is already installed
+  prerequisite_checks: Vec<instructions::Instructions>,
   /// Instructions for installing the software
   install_instructions: InstallationInstructions,
   /// Instructions for uninstalling the software
@@ -85,11 +88,44 @@ impl InstructionMapping {
   /// using the builder methods.
   pub(crate) fn new() -> Self {
     Self {
+      prerequisite_checks: Vec::new(),
       install_instructions: InstallationInstructions::new(),
       uninstall_instructions: InstallationInstructions::new(),
       configuration_instructions: ConfigurationInstructions::new(),
       deconfiguration_instructions: ConfigurationInstructions::new(),
     }
+  }
+
+  /// Adds prerequisite check instructions to this mapping.
+  /// 
+  /// These instructions will be executed before installation to check if
+  /// the software is already installed or if prerequisites are met.
+  /// Only Assert instructions are accepted for prerequisite checks.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `checks` - Vector of Assert instructions to check prerequisites
+  /// 
+  /// # Returns
+  /// 
+  /// Returns `self` for method chaining.
+  pub(crate) fn add_prerequisite_checks(
+    mut self,
+    checks: Vec<instructions::Instructions>,
+  ) -> Self {
+    // Validate that all instructions are Assert variants
+    for check in &checks {
+      match check {
+        instructions::Instructions::Assert(_) => {
+          // Valid - this is an Assert instruction
+        }
+        _ => {
+          panic!("Only Assert instructions are allowed for prerequisite checks");
+        }
+      }
+    }
+    self.prerequisite_checks.extend(checks);
+    self
   }
 
   /// Adds installation instructions to this mapping.
@@ -313,6 +349,23 @@ impl SoftwareBundle {
       .mapping
       .get(os)
       .expect(&format!("No installation commands found for OS: {:?}", os));
+
+    // Check prerequisites first
+    if !commands.prerequisite_checks.is_empty() {
+      println!("  Checking prerequisites...");
+      for check in &commands.prerequisite_checks {
+        match check.run(dry_run) {
+          Ok(_) => {
+            println!("  Program already installed, skipping installation.");
+            return;
+          }
+          Err(_) => {
+            // Prerequisites not met, continue with installation
+            println!("  Prerequisites not met, proceeding with installation.");
+          }
+        }
+      }
+    }
 
     for instruction in &commands.install_instructions.install {
       if let Err(e) = instruction.run(dry_run) {

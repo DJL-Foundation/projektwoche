@@ -533,7 +533,7 @@ jobs:
             dockerfile: tests/Dockerfile.ubuntu
             image_name: projektwoche-ubuntu-test
           - platform: windows
-            runs-on: blacksmith-4vcpu-ubuntu-2404
+            runs-on: windows-latest
             dockerfile: tests/Dockerfile.windows
             image_name: projektwoche-windows-test
     steps:

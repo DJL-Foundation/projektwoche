@@ -616,6 +616,102 @@ impl AnyInstruction for WaitForCondition {
 /// 
 /// The instruction tries managers in order until one succeeds.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct InstallApplication {
+  /// Name of the package to install
+  package_name: &'static str,
+}
+
+impl InstallApplication {
+  fn new(package_name: &'static str) -> Self {
+    Self { package_name }
+  }
+}
+
+impl AnyInstruction for InstallApplication {
+  fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if dry_run {
+      println!("Dry run: would install package '{}'", self.package_name);
+      return Ok(());
+    }
+
+    #[cfg(not(windows))]
+    {
+      let package_managers = [
+        ("apt", vec!["apt", "install", "-y", self.package_name]),
+        ("yum", vec!["yum", "install", "-y", self.package_name]),
+        ("dnf", vec!["dnf", "install", "-y", self.package_name]),
+        (
+          "pacman",
+          vec!["pacman", "-S", "--noconfirm", self.package_name],
+        ),
+        ("zypper", vec!["zypper", "install", "-y", self.package_name]),
+        ("brew", vec!["brew", "install", self.package_name]),
+      ];
+
+      for (pm, args) in &package_managers {
+        if Command::new("which")
+          .arg(pm)
+          .output()
+          .map(|o| o.status.success())
+          .unwrap_or(false)
+        {
+          let status = Command::new(args[0]).args(&args[1..]).status()?;
+
+          if status.success() {
+            return Ok(());
+          }
+        }
+      }
+    }
+
+    #[cfg(windows)]
+    {
+      if Command::new("choco")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+      {
+        let status = Command::new("choco")
+          .args(&["install", self.package_name, "-y"])
+          .status()?;
+        if status.success() {
+          return Ok(());
+        }
+      }
+
+      if Command::new("winget")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+      {
+        let status = Command::new("winget")
+          .args(&["install", "--id", self.package_name, "-e"])
+          .status()?;
+        if status.success() {
+          return Ok(());
+        }
+      }
+    }
+
+    Err("No suitable package manager found".into())
+  }
+}
+
+/// Installs packages using programming language package managers.
+/// 
+/// This instruction detects available language package managers and uses them
+/// to install packages globally. Supported managers:
+/// 
+/// **JavaScript/TypeScript**: npm, yarn, bun, pnpm
+/// **Rust**: cargo
+/// **Python**: pip, pipx
+/// **Ruby**: gem
+/// **Go**: go install
+/// 
+/// The instruction tries managers in order until one succeeds.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InstallPackage {
   /// Name of the package to install
   package_name: &'static str,
@@ -630,25 +726,34 @@ impl InstallPackage {
 impl AnyInstruction for InstallPackage {
   fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if dry_run {
-      println!("Dry run: would install package '{}'", self.package_name);
+      println!("Dry run: would install package '{}' using language package manager", self.package_name);
       return Ok(());
     }
+
     let package_managers = [
-      ("apt", vec!["apt", "install", "-y", self.package_name]),
-      ("yum", vec!["yum", "install", "-y", self.package_name]),
-      ("dnf", vec!["dnf", "install", "-y", self.package_name]),
-      (
-        "pacman",
-        vec!["pacman", "-S", "--noconfirm", self.package_name],
-      ),
-      ("zypper", vec!["zypper", "install", "-y", self.package_name]),
-      ("brew", vec!["brew", "install", self.package_name]),
+      // JavaScript/TypeScript package managers
+      ("npm", vec!["npm", "install", "-g", self.package_name]),
+      ("yarn", vec!["yarn", "global", "add", self.package_name]),
+      ("bun", vec!["bun", "add", "-g", self.package_name]),
+      ("pnpm", vec!["pnpm", "add", "-g", self.package_name]),
+      // Rust package manager
+      ("cargo", vec!["cargo", "install", self.package_name]),
+      // Python package managers
+      ("pipx", vec!["pipx", "install", self.package_name]),
+      ("pip", vec!["pip", "install", "--user", self.package_name]),
+      // Ruby package manager
+      ("gem", vec!["gem", "install", self.package_name]),
     ];
 
     for (pm, args) in &package_managers {
-      if Command::new("which")
-        .arg(pm)
-        .output()
+      // Check if package manager is available
+      let check_cmd = if *pm == "go" {
+        Command::new("go").arg("version").output()
+      } else {
+        Command::new(pm).arg("--version").output()
+      };
+
+      if check_cmd
         .map(|o| o.status.success())
         .unwrap_or(false)
       {
@@ -660,33 +765,22 @@ impl AnyInstruction for InstallPackage {
       }
     }
 
+    // Special case for Go (different command structure)
+    if Command::new("go")
+      .arg("version")
+      .output()
+      .map(|o| o.status.success())
+      .unwrap_or(false)
     {
-      if Command::new("choco")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
-      {
-        Command::new("choco")
-          .args(&["install", self.package_name, "-y"])
-          .status()?;
-        return Ok(());
-      }
-
-      if Command::new("winget")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
-      {
-        Command::new("winget")
-          .args(&["install", self.package_name])
-          .status()?;
+      let status = Command::new("go")
+        .args(&["install", &format!("{}@latest", self.package_name)])
+        .status()?;
+      if status.success() {
         return Ok(());
       }
     }
 
-    Err("No suitable package manager found".into())
+    Err("No suitable language package manager found".into())
   }
 }
 
@@ -914,7 +1008,9 @@ pub enum Instructions {
   CreateShortcut(CreateShortcut),
   /// Wait for a condition to become true
   WaitForCondition(WaitForCondition),
-  /// Install a package using system package manager
+  /// Install an application using system package manager
+  InstallApplication(InstallApplication),
+  /// Install a package using language package manager
   InstallPackage(InstallPackage),
   /// Clone a Git repository
   CloneRepository(CloneRepository),
@@ -948,6 +1044,7 @@ impl AnyInstruction for Instructions {
       Instructions::AddEnvVar(inst) => inst.run(dry_run),
       Instructions::CreateShortcut(inst) => inst.run(dry_run),
       Instructions::WaitForCondition(inst) => inst.run(dry_run),
+      Instructions::InstallApplication(inst) => inst.run(dry_run),
       Instructions::InstallPackage(inst) => inst.run(dry_run),
       Instructions::CloneRepository(inst) => inst.run(dry_run),
       Instructions::RequestSudo(inst) => inst.run(dry_run),
@@ -1057,10 +1154,25 @@ impl Instruction {
     Instructions::from_instruction(self)
   }
 
-  /// Install a package using the system package manager.
+  /// Install an application using the system package manager.
   /// 
   /// Automatically detects and uses the appropriate package manager
   /// for the current operating system.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `package_name` - Name of the application to install
+  pub fn install_application(mut self, package_name: &'static str) -> Instructions {
+    self.instruction = Some(Instructions::InstallApplication(InstallApplication::new(
+      package_name,
+    )));
+    Instructions::from_instruction(self)
+  }
+
+  /// Install a package using language package managers.
+  /// 
+  /// Automatically detects and uses available language package managers
+  /// like npm, cargo, pip, etc.
   /// 
   /// # Arguments
   /// 
@@ -1069,6 +1181,28 @@ impl Instruction {
     self.instruction = Some(Instructions::InstallPackage(InstallPackage::new(
       package_name,
     )));
+    Instructions::from_instruction(self)
+  }
+
+  /// Create an assertion that checks if a command produces expected output.
+  /// 
+  /// This is commonly used for prerequisite checks to verify if software
+  /// is already installed.
+  /// 
+  /// # Arguments
+  /// 
+  /// * `command` - Command to execute (will be split on whitespace)
+  /// * `expect` - String that should be present in the command output
+  /// 
+  /// # Example
+  /// 
+  /// ```rust
+  /// // Check if Node.js is installed
+  /// let check = Instruction::new("Check Node.js")
+  ///   .assert("node --version", "v");
+  /// ```
+  pub fn assert(mut self, command: &str, expect: &'static str) -> Instructions {
+    self.instruction = Some(Instructions::Assert(Assert::new(command, expect)));
     Instructions::from_instruction(self)
   }
 
