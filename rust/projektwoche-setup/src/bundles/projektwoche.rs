@@ -31,29 +31,29 @@ use crate::manager::SoftwareBundle;
 use crate::packages::{apps, ide, js};
 
 /// Creates the Projektwoche software bundle.
-/// 
+///
 /// This function assembles a complete web development environment suitable
 /// for educational use in the Athenaeum Stade Projektwoche program.
-/// 
+///
 /// # Bundle Philosophy
-/// 
+///
 /// The bundle is designed around modern JavaScript/TypeScript development:
 /// - **Node.js** provides the runtime foundation
 /// - **Bun** offers faster package management and execution
 /// - **VS Code** gives students a professional development environment
-/// 
+///
 /// # Performance Characteristics
-/// 
+///
 /// - **Parallel installation**: All packages install concurrently
 /// - **Cross-platform**: Automatically adapts to Windows/Linux environments
 /// - **Educational optimized**: Focuses on tools that enhance learning
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns a fully configured [`SoftwareBundle`] ready for installation.
-/// 
+///
 /// # Example Usage
-/// 
+///
 /// ```rust
 /// let bundle = projektwoche::bundle();
 /// bundle.install(&os, false)?; // Install on detected OS

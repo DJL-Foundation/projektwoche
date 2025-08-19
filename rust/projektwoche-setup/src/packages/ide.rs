@@ -20,32 +20,32 @@ use crate::manager::instructions::Instruction;
 use crate::manager::{InstructionMapping, Package};
 
 /// Creates a Visual Studio Code package with cross-platform installation instructions.
-/// 
+///
 /// Visual Studio Code is Microsoft's free, open-source code editor that has become
 /// the most popular development environment. It features:
-/// 
+///
 /// - **Rich extension ecosystem**: Thousands of extensions for different languages and tools
 /// - **Integrated terminal**: Built-in terminal for running commands
 /// - **Git integration**: Native Git support with visual diff tools
 /// - **IntelliSense**: Advanced code completion and error detection
 /// - **Debugging support**: Built-in debugger for multiple languages
-/// 
+///
 /// # Platform Support
-/// 
+///
 /// - **Windows**: Downloads and executes the official Windows installer
 /// - **RHEL-based Linux**: Installs via system package manager (yum/dnf)
-/// 
+///
 /// # Installation Methods
-/// 
+///
 /// - **Windows**: Uses [`download_and_exec`] to download and run the official installer
 /// - **Linux**: Uses [`install_package`] to install via the system package manager
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns a configured [`Package`] with platform-specific installation instructions.
-/// 
+///
 /// # Note
-/// 
+///
 /// Additional Linux distributions can be supported by adding more OS mappings
 /// with appropriate installation instructions for their package managers.
 pub fn vscode() -> Package {
@@ -77,6 +77,10 @@ pub fn vscode() -> Package {
         Instruction::new("Check if VSCode is installed").assert("code --version", "."),
       ])
       .add_install_instructions(vec![
+        Instruction::new("Install dependencies and GPG key").cmd("wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg"),
+        Instruction::new("Install GPG key").cmd("sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/"),
+        Instruction::new("Add Microsoft repository").cmd("sudo sh -c 'echo \"deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\" > /etc/apt/sources.list.d/vscode.list'"),
+        Instruction::new("Update package list").cmd("sudo apt update"),
         Instruction::new("Install VSCode").install_application("code"),
       ]),
   )

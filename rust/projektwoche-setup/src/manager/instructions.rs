@@ -57,33 +57,33 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 /// Core trait that all instruction types must implement.
-/// 
+///
 /// This trait provides a uniform interface for executing different types
 /// of operations, with built-in support for dry-run mode.
 pub trait AnyInstruction {
   /// Execute the instruction.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `dry_run` - If true, print what would be done without executing
-  /// 
+  ///
   /// # Returns
-  /// 
+  ///
   /// Returns `Ok(())` on success, or an error describing what went wrong.
   fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
 }
 
 /// Downloads and executes installers with cross-platform support.
-/// 
+///
 /// This instruction handles downloading executable files and running them
 /// with appropriate platform-specific installation flags. It supports:
-/// 
+///
 /// - **Windows**: .exe and .msi files with silent installation flags
 /// - **Linux/macOS**: Executable files without extensions
 /// - **Archives**: .zip files (use [`ExtractArchive`] instead)
-/// 
+///
 /// # Silent Installation
-/// 
+///
 /// When `silent` is enabled, the instruction will attempt various common
 /// silent installation flags if the custom arguments fail.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -242,12 +242,12 @@ impl AnyInstruction for DownloadAndExec {
 }
 
 /// Executes shell commands with cross-platform compatibility.
-/// 
+///
 /// This instruction runs arbitrary shell commands, automatically handling
 /// argument parsing and execution. Commands are split on whitespace.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// Run::new("npm install -g yarn")
 /// ```
@@ -344,7 +344,11 @@ impl AnyInstruction for Assert {
     }
 
     if dry_run {
-      println!("Dry run: expect the result of: {} to be {}", self.command.join(" "), self.expect);
+      println!(
+        "Dry run: expect the result of: {} to be {}",
+        self.command.join(" "),
+        self.expect
+      );
       return Ok(());
     }
 
@@ -606,14 +610,14 @@ impl AnyInstruction for WaitForCondition {
 }
 
 /// Automatically installs packages using the system's package manager.
-/// 
+///
 /// This instruction detects the available package manager on the system
 /// and uses it to install the specified package. Supported managers:
-/// 
+///
 /// **Linux**: apt, yum, dnf, pacman, zypper
 /// **macOS**: brew  
 /// **Windows**: choco, winget
-/// 
+///
 /// The instruction tries managers in order until one succeeds.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InstallApplication {
@@ -700,16 +704,16 @@ impl AnyInstruction for InstallApplication {
 }
 
 /// Installs packages using programming language package managers.
-/// 
+///
 /// This instruction detects available language package managers and uses them
 /// to install packages globally. Supported managers:
-/// 
+///
 /// **JavaScript/TypeScript**: npm, yarn, bun, pnpm
 /// **Rust**: cargo
 /// **Python**: pip, pipx
 /// **Ruby**: gem
 /// **Go**: go install
-/// 
+///
 /// The instruction tries managers in order until one succeeds.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InstallPackage {
@@ -726,7 +730,10 @@ impl InstallPackage {
 impl AnyInstruction for InstallPackage {
   fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if dry_run {
-      println!("Dry run: would install package '{}' using language package manager", self.package_name);
+      println!(
+        "Dry run: would install package '{}' using language package manager",
+        self.package_name
+      );
       return Ok(());
     }
 
@@ -753,10 +760,7 @@ impl AnyInstruction for InstallPackage {
         Command::new(pm).arg("--version").output()
       };
 
-      if check_cmd
-        .map(|o| o.status.success())
-        .unwrap_or(false)
-      {
+      if check_cmd.map(|o| o.status.success()).unwrap_or(false) {
         let status = Command::new(args[0]).args(&args[1..]).status()?;
 
         if status.success() {
@@ -841,7 +845,10 @@ impl RequestSudo {
 impl AnyInstruction for RequestSudo {
   fn run(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if dry_run {
-      println!("Dry run: would request administrator privileges: {}", self.reason);
+      println!(
+        "Dry run: would request administrator privileges: {}",
+        self.reason
+      );
       return Ok(());
     }
     println!("Administrator privileges required: {}", self.reason);
@@ -984,10 +991,10 @@ impl AnyInstruction for EditFile {
 }
 
 /// Unified instruction enum that contains all available instruction types.
-/// 
+///
 /// This enum serves as a type-safe container for all instruction variants,
 /// allowing them to be stored in collections and executed polymorphically.
-/// 
+///
 /// Each variant corresponds to a specific instruction type and provides
 /// the same functionality through the [`AnyInstruction`] trait.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1056,22 +1063,22 @@ impl AnyInstruction for Instructions {
 }
 
 /// Builder for creating and configuring instructions.
-/// 
+///
 /// This struct provides a fluent interface for creating instructions with
 /// a human-readable description. The builder pattern allows for clean,
 /// expressive instruction creation.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// let instruction = Instruction::new("Install Node.js")
 ///   .download_and_exec_silent("https://nodejs.org/dist/latest/node-x64.msi");
-/// 
+///
 /// instruction.run(false)?; // Execute the instruction
 /// ```
-/// 
+///
 /// # Available Methods
-/// 
+///
 /// - **File Operations**: `download_and_exec`, `download_to`, `extract_archive`
 /// - **Commands**: `cmd`, `install_package`, `clone_repository`  
 /// - **System**: `add_env_var`, `create_shortcut`, `restart_service`
@@ -1087,9 +1094,9 @@ pub struct Instruction {
 
 impl Instruction {
   /// Creates a new instruction builder with a description.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `descriptor` - Human-readable description of what this instruction does
   pub fn new(descriptor: &'static str) -> Self {
     Self {
@@ -1099,9 +1106,9 @@ impl Instruction {
   }
 
   /// Download and execute an installer normally.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `url` - URL to download the installer from
   pub fn download_and_exec(mut self, url: &'static str) -> Instructions {
     self.instruction = Some(Instructions::DownloadAndExec(DownloadAndExec::new(
@@ -1111,12 +1118,12 @@ impl Instruction {
   }
 
   /// Download and execute an installer with silent/quiet flags.
-  /// 
+  ///
   /// This method automatically tries common silent installation flags
   /// if no custom arguments are provided.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `url` - URL to download the installer from
   pub fn download_and_exec_silent(mut self, url: &'static str) -> Instructions {
     self.instruction = Some(Instructions::DownloadAndExec(DownloadAndExec::new(
@@ -1126,9 +1133,9 @@ impl Instruction {
   }
 
   /// Download and execute an installer with custom arguments.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `url` - URL to download the installer from  
   /// * `args` - Custom arguments to pass to the installer
   pub fn download_and_exec_with_args(
@@ -1145,9 +1152,9 @@ impl Instruction {
   }
 
   /// Execute a shell command.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `command` - Shell command to execute (will be split on whitespace)
   pub fn cmd(mut self, command: &str) -> Instructions {
     self.instruction = Some(Instructions::Run(Run::new(command)));
@@ -1155,12 +1162,12 @@ impl Instruction {
   }
 
   /// Install an application using the system package manager.
-  /// 
+  ///
   /// Automatically detects and uses the appropriate package manager
   /// for the current operating system.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `package_name` - Name of the application to install
   pub fn install_application(mut self, package_name: &'static str) -> Instructions {
     self.instruction = Some(Instructions::InstallApplication(InstallApplication::new(
@@ -1170,12 +1177,12 @@ impl Instruction {
   }
 
   /// Install a package using language package managers.
-  /// 
+  ///
   /// Automatically detects and uses available language package managers
   /// like npm, cargo, pip, etc.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `package_name` - Name of the package to install
   pub fn install_package(mut self, package_name: &'static str) -> Instructions {
     self.instruction = Some(Instructions::InstallPackage(InstallPackage::new(
@@ -1185,17 +1192,17 @@ impl Instruction {
   }
 
   /// Create an assertion that checks if a command produces expected output.
-  /// 
+  ///
   /// This is commonly used for prerequisite checks to verify if software
   /// is already installed.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `command` - Command to execute (will be split on whitespace)
   /// * `expect` - String that should be present in the command output
-  /// 
+  ///
   /// # Example
-  /// 
+  ///
   /// ```rust
   /// // Check if Node.js is installed
   /// let check = Instruction::new("Check Node.js")
@@ -1207,12 +1214,12 @@ impl Instruction {
   }
 
   /// Execute the instruction immediately.
-  /// 
+  ///
   /// This is a convenience method for running an instruction without
   /// going through the Instructions enum.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `dry_run` - If true, only print what would be done
   pub fn execute(&self, dry_run: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if let Some(ref instruction) = self.instruction {

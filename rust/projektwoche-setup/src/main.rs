@@ -34,13 +34,13 @@ struct Cli {
 }
 
 /// Available CLI commands that users can execute.
-/// 
+///
 /// Each command supports different operations on software bundles,
 /// with optional dry-run functionality for safe testing.
 #[derive(Subcommand, Debug)]
 enum Commands {
   /// Install a Software Bundle
-  /// 
+  ///
   /// Downloads and installs all packages contained within the specified bundle.
   /// This includes both the software installation and any necessary configuration.
   #[clap(
@@ -52,15 +52,15 @@ enum Commands {
     package: Bundles,
 
     /// Dry run: show what would be installed without doing it
-    /// 
+    ///
     /// When enabled, this will display all installation steps that would
     /// be executed without actually making any changes to the system.
     #[clap(short, long)]
     debug: bool,
   },
-  
+
   /// Uninstall a Software Bundle
-  /// 
+  ///
   /// Removes all packages contained within the specified bundle and
   /// reverts any configuration changes that were made during installation.
   #[clap(
@@ -72,35 +72,45 @@ enum Commands {
     package: Bundles,
 
     /// Dry run: show what would be uninstalled without doing it
-    /// 
+    ///
     /// When enabled, this will display all uninstallation steps that would
     /// be executed without actually making any changes to the system.
     #[clap(short, long)]
     debug: bool,
   },
-  
+
   /// Update the CLI tool itself
-  /// 
+  ///
   /// Downloads and installs the latest version of the projektwoche-setup tool.
   /// This ensures you have access to the latest bundles and features.
-  /// 
+  ///
   /// **Note:** This feature is not yet implemented.
   SelfUpdate,
+
+  /// Configure the CLI tool interactively
+  ///
+  /// Opens an interactive configuration wizard that allows you to customize
+  /// the CLI tool's behavior, set preferences, and configure installation options.
+  #[clap(
+    visible_alias = "config",
+    long_about = "Interactive configuration wizard for customizing CLI behavior, setting user preferences, and configuring installation options."
+  )]
+  Configure,
 }
 
 /// Available software bundles that can be installed or uninstalled.
-/// 
+///
 /// Each bundle represents a collection of related software packages
 /// designed for specific development scenarios or workflows.
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Hash, clap::ValueEnum)]
 enum Bundles {
   /// Complete development environment for the Projektwoche project
-  /// 
+  ///
   /// This bundle includes:
   /// - Node.js (JavaScript runtime via nvm)
   /// - Bun (Fast JavaScript runtime and package manager)  
   /// - Visual Studio Code (Modern code editor)
-  /// 
+  ///
   /// Designed specifically for web development workflows used in
   /// the Athenaeum Stade Projektwoche.
   #[default]
@@ -108,15 +118,15 @@ enum Bundles {
 }
 
 /// Application entry point that orchestrates the CLI workflow.
-/// 
+///
 /// This function:
 /// 1. Parses command-line arguments using clap
 /// 2. Loads or creates system configuration
 /// 3. Executes the requested command (install/uninstall/self-update)
 /// 4. Handles errors and provides user feedback
-/// 
+///
 /// # Error Handling
-/// 
+///
 /// Configuration errors are printed to stderr and cause the program to exit.
 /// Installation/uninstallation errors are caught and displayed with context.
 fn main() {
@@ -131,7 +141,7 @@ fn main() {
           let bundle = match *package {
             Bundles::Projektwoche => bundles::projektwoche::bundle(),
           };
-          
+
           // Display installation mode to user
           if *debug {
             println!("==> INSTALLATION (DRY-RUN)");
@@ -150,7 +160,7 @@ fn main() {
           let bundle = match *package {
             Bundles::Projektwoche => bundles::projektwoche::bundle(),
           };
-          
+
           // Display uninstallation mode to user
           if *debug {
             println!("==> DEINSTALLATION (DRY-RUN)");
@@ -168,6 +178,15 @@ fn main() {
           println!("==> SELF-UPDATE (noch nicht implementiert)");
           // TODO: Implement self-update functionality
           // This should download and install the latest version of the CLI tool
+        }
+        Commands::Configure => {
+          println!("==> CONFIGURATION WIZARD");
+          if let Some(config) = config::interactive::configuration_wizard() {
+            println!("Configuration saved: {:?}", config);
+          } else {
+            println!("Configuration cancelled by user.");
+          }
+          println!("==> Konfiguration abgeschlossen.");
         }
       }
     }

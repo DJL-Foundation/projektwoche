@@ -26,7 +26,7 @@ use os_info::get;
 use serde::{Deserialize, Serialize};
 
 /// Supported CPU architectures.
-/// 
+///
 /// The enum automatically detects the current system architecture
 /// and falls back to x86_64 for unsupported architectures.
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,7 +51,7 @@ impl Default for Architectures {
 }
 
 /// Operating system wrapper with serialization support.
-/// 
+///
 /// This struct wraps the `os_info::Type` to provide serialization
 /// capabilities while maintaining compatibility with the os_info crate.
 #[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
@@ -66,7 +66,7 @@ impl Default for OS {
 }
 
 /// Broad categories of operating systems for easier targeting.
-/// 
+///
 /// These categories allow packages to specify instructions for
 /// groups of similar operating systems rather than individual OSes.
 #[derive(Copy, Clone)]
@@ -90,7 +90,7 @@ pub enum OsCategory {
 }
 
 /// Selector for choosing specific OS or OS categories.
-/// 
+///
 /// This enum allows flexible specification of which operating
 /// systems an instruction mapping should apply to.
 pub enum OsSelector {
@@ -101,20 +101,20 @@ pub enum OsSelector {
 }
 
 /// Matches operating systems against a list of supported systems.
-/// 
+///
 /// This struct provides flexible OS matching capabilities, allowing
 /// packages to specify which operating systems they support through
 /// either specific OS types or broad categories.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// // Create a matcher for all Linux distributions
 /// let linux_matcher = OsMatcher::from_category(OsCategory::LinuxBased);
-/// 
+///
 /// // Create a matcher for specific OS types
 /// let specific_matcher = OsMatcher::new(&[OS::Windows, OS::MacOS]);
-/// 
+///
 /// // Check if current OS is supported
 /// if linux_matcher.matches(&current_os) {
 ///     // Install using Linux-specific instructions
@@ -126,9 +126,9 @@ pub struct OsMatcher {
 }
 impl OsMatcher {
   /// Creates a new OS matcher with a specific list of supported systems.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `os_list` - Array of operating systems this matcher should support
   pub fn new(os_list: &[OS]) -> Self {
     Self {
@@ -137,22 +137,22 @@ impl OsMatcher {
   }
 
   /// Checks if the given OS is supported by this matcher.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `os` - Operating system to check
-  /// 
+  ///
   /// # Returns
-  /// 
+  ///
   /// Returns `true` if the OS is in the supported list.
   pub fn matches(&self, os: &OS) -> bool {
     self.os_list.iter().any(|o| o.0 == os.0)
   }
 
   /// Creates a matcher from an OS selector.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `selector` - Either a specific OS or an OS category
   pub fn from_selector(selector: OsSelector) -> Self {
     match selector {
@@ -162,12 +162,12 @@ impl OsMatcher {
   }
 
   /// Creates a matcher for an entire OS category.
-  /// 
+  ///
   /// This is the most common way to create matchers, as it allows
   /// targeting broad groups of similar operating systems.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `category` - The OS category to match against
   pub fn from_category(category: OsCategory) -> Self {
     match category {
@@ -183,9 +183,9 @@ impl OsMatcher {
   }
 
   /// Creates a matcher for multiple OS categories.
-  /// 
+  ///
   /// # Arguments
-  /// 
+  ///
   /// * `categories` - Array of OS categories to combine
   pub fn from_categories(categories: &[OsCategory]) -> Self {
     let mut os_list = Vec::new();
@@ -275,7 +275,7 @@ pub const GENTOO_BASED_OS: &[OS] = &[OS(os_info::Type::Gentoo)];
 pub const ANDROID_BASED_OS: &[OS] = &[OS(os_info::Type::Android)];
 
 /// Complete machine information including OS and architecture.
-/// 
+///
 /// This struct represents all the detected information about the current
 /// machine that packages need to make installation decisions.
 #[derive(Debug, Default, Serialize, Deserialize)]

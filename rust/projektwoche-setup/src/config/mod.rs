@@ -26,7 +26,7 @@ use serde::{Deserialize, Serialize};
 use std::process::exit;
 
 /// Main configuration structure containing machine information.
-/// 
+///
 /// This struct is automatically populated with detected system information
 /// and persisted to disk for future use.
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -37,16 +37,16 @@ pub struct Config {
 }
 
 /// Loads or creates the application configuration.
-/// 
+///
 /// This function attempts to load existing configuration from disk,
 /// or creates a new configuration with detected system information.
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns the loaded/created configuration on success.
-/// 
+///
 /// # Errors
-/// 
+///
 /// If configuration loading fails, the function prints an error message
 /// and exits the program with code 1.
 pub fn use_config() -> Result<Config, Box<dyn std::error::Error>> {

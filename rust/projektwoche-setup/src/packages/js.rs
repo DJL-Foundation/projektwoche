@@ -22,66 +22,71 @@ use crate::manager::instructions::Instruction;
 use crate::manager::{InstructionMapping, Package};
 
 /// Creates a Node.js package with cross-platform installation instructions.
-/// 
+///
 /// Node.js is installed via nvm (Node Version Manager) to allow easy version
 /// switching and management. The installation includes:
-/// 
+///
 /// - **nvm installation**: Downloads and installs nvm using official scripts
 /// - **Node.js installation**: Installs the latest Node.js version via nvm  
 /// - **PATH configuration**: Adds Node.js binaries to the system PATH
 /// - **Shell integration**: Configures shell startup files for persistent access
-/// 
+///
 /// # Platform Support
-/// 
+///
 /// - **Windows**: Uses nvm-windows with PowerShell scripts and environment variables
 /// - **Linux**: Uses standard nvm with bash configuration and shell reloading
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns a configured [`Package`] with platform-specific installation instructions.
 pub fn nodejs() -> Package {
-  Package::new("Node.js", "JavaScript runtime").add_mapping(
-    OsMatcher::from_category(OsCategory::Windows),
-    InstructionMapping::new()
-      .add_prerequisite_checks(vec![
-        Instruction::new("Check if Node.js is installed").assert("node --version", "v"),
-      ])
-      .add_install_instructions(vec![
-        Instruction::new("Install Node.js").install_application("OpenJS.NodeJS"),
-      ]),
-  ).add_mapping(
-    OsMatcher::from_category(OsCategory::LinuxBased),
-    InstructionMapping::new()
-      .add_prerequisite_checks(vec![
-        Instruction::new("Check if Node.js is installed").assert("node --version", "v"),
-      ])
-      .add_install_instructions(vec![
-        Instruction::new("Install nvm").cmd("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"),
-        Instruction::new("Source nvm and install Node.js").cmd("bash -c 'source ~/.bashrc && nvm install node && nvm use node && nvm alias default node'"),
-      ]),
-  )
+  Package::new("Node.js", "JavaScript runtime")
+    .add_mapping(
+      OsMatcher::from_category(OsCategory::Windows),
+      InstructionMapping::new()
+        .add_prerequisite_checks(vec![
+          Instruction::new("Check if Node.js is installed").assert("node --version", "v"),
+        ])
+        .add_install_instructions(vec![
+          Instruction::new("Install Node.js").install_application("OpenJS.NodeJS"),
+        ]),
+    )
+    .add_mapping(
+      OsMatcher::from_category(OsCategory::LinuxBased),
+      InstructionMapping::new()
+        .add_prerequisite_checks(vec![
+          Instruction::new("Check if Node.js is installed").assert("node --version", "v"),
+        ])
+        .add_install_instructions(vec![
+          Instruction::new("Install curl if needed")
+            .cmd("sudo apt update && sudo apt install -y curl"),
+          Instruction::new("Setup NodeSource repository")
+            .cmd("curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -"),
+          Instruction::new("Install Node.js").install_application("nodejs"),
+        ]),
+    )
 }
 
 /// Creates a Bun package with cross-platform installation instructions.
-/// 
+///
 /// Bun is a fast JavaScript runtime and package manager that serves as an
 /// alternative to Node.js and npm/yarn. The installation uses official
 /// installation scripts provided by the Bun team.
-/// 
+///
 /// # Features
-/// 
+///
 /// - **Fast runtime**: Significantly faster than Node.js for many workloads
 /// - **Built-in package manager**: No need for separate npm/yarn installation
 /// - **TypeScript support**: Native TypeScript execution without compilation
 /// - **Bundler included**: Built-in bundling and minification capabilities
-/// 
+///
 /// # Platform Support
-/// 
+///
 /// - **Windows**: Uses PowerShell installation script from bun.sh
 /// - **Linux**: Uses bash installation script with curl
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns a configured [`Package`] with platform-specific installation instructions.
 pub fn bun() -> Package {
   Package::new("Bun", "JavaScript runtime and package manager")

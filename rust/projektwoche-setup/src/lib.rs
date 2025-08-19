@@ -91,5 +91,5 @@ pub mod manager;
 pub mod packages;
 
 // Re-export commonly used types for convenience
-pub use manager::{Package, SoftwareBundle};
 pub use config::{Config, use_config};
+pub use manager::{Package, SoftwareBundle};
