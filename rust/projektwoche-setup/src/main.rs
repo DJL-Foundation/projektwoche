@@ -17,7 +17,10 @@ mod config;
 mod manager;
 mod packages;
 
+mod logger;
+
 use clap::{Parser, Subcommand};
+use logger::{LogLevel, LoggerSystem, ConsoleOutput, LevelFilter};
 
 /// Main CLI application structure that defines the command-line interface
 /// using the `clap` derive macros for automatic argument parsing.
@@ -91,11 +94,41 @@ enum Commands {
   ///
   /// Opens an interactive configuration wizard that allows you to customize
   /// the CLI tool's behavior, set preferences, and configure installation options.
-  #[clap(
-    visible_alias = "config",
-    long_about = "Interactive configuration wizard for customizing CLI behavior, setting user preferences, and configuring installation options."
-  )]
-  Configure,
+  // #[clap(
+  //   long_about = "Interactive configuration wizard for customizing CLI behavior, setting user preferences, and configuring installation options."
+  // )]
+  // Configure,
+
+  /// Manage configuration settings
+  ///
+  /// Allows you to view and modify various configuration settings such as log levels.
+  #[clap(visible_alias = "cfg")]
+  Config {
+    #[clap(subcommand)]
+    action: ConfigAction,
+  },
+}
+
+/// Configuration management commands.
+#[derive(Subcommand, Debug)]
+enum ConfigAction {
+  /// Manage log level settings
+  Loglevel {
+    #[clap(subcommand)]
+    action: LogLevelAction,
+  },
+}
+
+/// Log level management commands.
+#[derive(Subcommand, Debug)]
+enum LogLevelAction {
+  /// Show current log level
+  Default,
+  /// Set log level
+  Set {
+    /// Log level to set
+    level: LogLevel,
+  },
 }
 
 /// Available software bundles that can be installed or uninstalled.
@@ -132,66 +165,103 @@ enum Bundles {
 fn main() {
   let cli = Cli::parse();
 
+  // Initialize logger system for configuration errors
+  let (logger_system, mut collector) = LoggerSystem::new();
+  collector.add_output(Box::new(ConsoleOutput::new(true)));
+  collector.add_filter(Box::new(LevelFilter::new(LogLevel::Info)));
+  
+  let (logger_system, collector_handle) = logger_system.start_collector(collector);
+  let main_logger = logger_system.create_logger("main", "main".to_string());
+
   match config::use_config() {
     Ok(config) => {
-      println!("Verwende Konfiguration: {:?}", config.machine);
+      main_logger.debug(format!("Verwende Konfiguration: {:?}", config.machine));
       match &cli.command {
         Commands::Install { debug, package } => {
           // Map the selected bundle enum to its implementation
-          let bundle = match *package {
+          let mut bundle = match *package {
             Bundles::Projektwoche => bundles::projektwoche::bundle(),
           };
 
           // Display installation mode to user
           if *debug {
-            println!("==> INSTALLATION (DRY-RUN)");
+            main_logger.info("==> INSTALLATION (DRY-RUN)");
           } else {
-            println!("==> INSTALLATION");
+            main_logger.info("==> INSTALLATION");
           }
 
           // Execute bundle installation with error handling
-          if let Err(e) = bundle.install(&config.machine.os, *debug) {
-            eprintln!("Fehler bei der Installation: {}", e);
+          if let Err(e) = bundle.install(&config.machine.os, *debug, &logger_system) {
+            main_logger.error(format!("Fehler bei der Installation: {}", e));
           }
-          println!("==> Installation abgeschlossen.");
+          main_logger.info("==> Installation abgeschlossen.");
         }
         Commands::Uninstall { debug, package } => {
           // Map the selected bundle enum to its implementation
-          let bundle = match *package {
+          let mut bundle = match *package {
             Bundles::Projektwoche => bundles::projektwoche::bundle(),
           };
 
           // Display uninstallation mode to user
           if *debug {
-            println!("==> DEINSTALLATION (DRY-RUN)");
+            main_logger.info("==> DEINSTALLATION (DRY-RUN)");
           } else {
-            println!("==> DEINSTALLATION");
+            main_logger.info("==> DEINSTALLATION");
           }
 
           // Execute bundle uninstallation with error handling
-          if let Err(e) = bundle.uninstall(&config.machine.os, *debug) {
-            eprintln!("Fehler bei der Deinstallation: {}", e);
+          if let Err(e) = bundle.uninstall(&config.machine.os, *debug, &logger_system) {
+            main_logger.error(format!("Fehler bei der Deinstallation: {}", e));
           }
-          println!("==> Deinstallation abgeschlossen.");
+          main_logger.info("==> Deinstallation abgeschlossen.");
         }
         Commands::SelfUpdate => {
-          println!("==> SELF-UPDATE (noch nicht implementiert)");
+          main_logger.info("==> SELF-UPDATE (noch nicht implementiert)");
           // TODO: Implement self-update functionality
           // This should download and install the latest version of the CLI tool
         }
-        Commands::Configure => {
-          println!("==> CONFIGURATION WIZARD");
-          if let Some(config) = config::interactive::configuration_wizard() {
-            println!("Configuration saved: {:?}", config);
-          } else {
-            println!("Configuration cancelled by user.");
+        // Commands::Configure => {
+        //   main_logger.info("==> CONFIGURATION WIZARD");
+        //   if let Some(config) = config::interactive::configuration_wizard() {
+        //     main_logger.info(format!("Configuration saved: {:?}", config));
+        //     main_logger.info("Configuration saved successfully.");
+        //   } else {
+        //     main_logger.info("Configuration cancelled by user.");
+        //   }
+        //   main_logger.info("==> Konfiguration abgeschlossen.");
+        // }
+        Commands::Config { action } => {
+          match action {
+            ConfigAction::Loglevel { action } => {
+              match action {
+                LogLevelAction::Default => {
+                  main_logger.info(format!("Current log level: {:?}", config.log_level));
+                }
+                LogLevelAction::Set { level } => {
+                  let mut new_config = config.clone();
+                  new_config.log_level = level.clone();
+                  
+                  match config::save_config(&new_config) {
+                    Ok(()) => {
+                      main_logger.info(format!("Log level set to: {:?}", level));
+                    }
+                    Err(e) => {
+                      main_logger.error(format!("Failed to save configuration: {}", e));
+                    }
+                  }
+                }
+              }
+            }
           }
-          println!("==> Konfiguration abgeschlossen.");
         }
       }
     }
     Err(e) => {
-      eprintln!("Fehler beim Laden/Erstellen der Konfiguration: {}", e);
+      main_logger.critical(format!("Fehler beim Laden/Erstellen der Konfiguration: {}", e));
     }
   }
+  
+  // Properly shutdown the logger system
+  logger_system.shutdown();
+  let _ = collector_handle.join();
 }

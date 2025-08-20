@@ -29,7 +29,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// The enum automatically detects the current system architecture
 /// and falls back to x86_64 for unsupported architectures.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Architectures {
   /// Standard 64-bit Intel/AMD processors
@@ -278,7 +278,7 @@ pub const ANDROID_BASED_OS: &[OS] = &[OS(os_info::Type::Android)];
 ///
 /// This struct represents all the detected information about the current
 /// machine that packages need to make installation decisions.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Machine {
   /// Detected operating system

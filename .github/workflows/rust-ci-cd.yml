@@ -13,6 +13,10 @@ on:
         description: "Force deployment"
         required: false
         default: "false"
+      force-skip-all-tests:
+        description: "Skip all tests and only run build"
+        required: false
+        default: "false"
 
 env:
   CARGO_TERM_COLOR: always
@@ -141,7 +145,7 @@ jobs:
       - name: 🔎 Assess Deployment Readiness
         id: assess-deployment
         run: |
-          if [[ ${{ steps.check-executor.outputs.EXECUTOR_CHECK }} == 'true' || ${{ steps.check-force-deployment.outputs.FORCE_DEPLOYMENT_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true' ]]; then
+          if [[ (${{ steps.check-executor.outputs.EXECUTOR_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true') || (${{ steps.check-force-deployment.outputs.FORCE_DEPLOYMENT_CHECK }} == 'true' && ${{ steps.check-increment.outputs.INCREMENT_CHECK }} == 'true') || (${{ steps.check-force-deployment.outputs.FORCE_DEPLOYMENT_CHECK }} == 'true' && "${{ github.event.inputs.force-skip-all-tests }}" == 'true') ]]; then
             echo "Deployment is ready."
             echo "RUN_DEPLOY=true" >> $GITHUB_OUTPUT
           else
@@ -266,7 +270,7 @@ jobs:
   test:
     name: 🧪 Run Unit Tests
     needs: allow-run
-    if: needs.allow-run.outputs.RUN_CI == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
     runs-on: blacksmith-8vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -299,7 +303,7 @@ jobs:
     needs:
       - build
       - allow-run
-    if: needs.allow-run.outputs.RUN_CI == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -417,7 +421,7 @@ jobs:
     needs:
       - allow-run
       - test-prowo-interaction
-    if: needs.allow-run.outputs.RUN_CI == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
@@ -471,7 +475,7 @@ jobs:
     needs:
       - allow-run
       - build
-    if: needs.allow-run.outputs.RUN_CI == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -519,7 +523,7 @@ jobs:
       - allow-run
       - build
       - test-prowo-interaction
-    if: needs.allow-run.outputs.RUN_CI == 'true'
+    if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -529,7 +533,7 @@ jobs:
           - windows
         include:
           - platform: ubuntu
-            runs-on: blacksmith-4vcpu-ubuntu-2404
+            runs-on: blacksmith-8vcpu-ubuntu-2404
             dockerfile: tests/Dockerfile.ubuntu
             image_name: projektwoche-ubuntu-test
           - platform: windows
@@ -589,7 +593,20 @@ jobs:
       - test-prowo-edge-cases
       - test-performance
       - test-prowo-docker
-    if: needs.allow-deploy.outputs.RUN_DEPLOY == 'true'
+    if: |
+      always() && 
+      needs.allow-deploy.outputs.RUN_DEPLOY == 'true' && 
+      needs.build.result == 'success' && 
+      (
+        github.event.inputs.force-skip-all-tests == 'true' || 
+        (
+          needs.test.result == 'success' && 
+          needs.test-prowo-interaction.result == 'success' && 
+          needs.test-prowo-edge-cases.result == 'success' && 
+          needs.test-performance.result == 'success' && 
+          needs.test-prowo-docker.result == 'success'
+        )
+      )
     runs-on: blacksmith-2vcpu-ubuntu-2404
     permissions:
       contents: write
@@ -661,27 +678,39 @@ jobs:
         run: |
           echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### General Tests" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Rust Unit Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Performance | ${{ needs.test-performance.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Projektwoche-Setup specific" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------------------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Interaction Tests | ${{ needs.test-prowo-interaction.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Edge Cases | ${{ needs.test-prowo-edge-cases.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker Tests | ${{ needs.test-prowo-docker.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.test-prowo-interaction.result }}" == "success" && "${{ needs.test-prowo-edge-cases.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" && "${{ needs.test-prowo-docker.result }}" == "success" ]]; then
-            echo "✅ All tests successful!" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.event.inputs.force-skip-all-tests }}" == "true" ]]; then
+            echo "⚠️ **All tests were skipped due to force-skip-all-tests option**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Build Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Some tests failed. Please check the logs of individual jobs for details." >> $GITHUB_STEP_SUMMARY
+            echo "### General Tests" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Rust Unit Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Performance | ${{ needs.test-performance.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Projektwoche-Setup specific" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|-----------------------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Interaction Tests | ${{ needs.test-prowo-interaction.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Edge Cases | ${{ needs.test-prowo-edge-cases.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Docker Tests | ${{ needs.test-prowo-docker.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.test-prowo-interaction.result }}" == "success" && "${{ needs.test-prowo-edge-cases.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" && "${{ needs.test-prowo-docker.result }}" == "success" ]]; then
+              echo "✅ All tests successful!" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Some tests failed. Please check the logs of individual jobs for details." >> $GITHUB_STEP_SUMMARY
+            fi
           fi
 
       - name: 🕵🏻‍♂️ Debug Message for skipped run

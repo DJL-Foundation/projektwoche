@@ -20,6 +20,7 @@
 pub mod instructions;
 
 use crate::config;
+use crate::logger::{Logger, LoggerSystem, LogCollector, ConsoleOutput, LevelFilter, LogLevel};
 use crate::manager::instructions::AnyInstruction;
 use std::collections::HashMap;
 
@@ -306,6 +307,8 @@ pub struct SoftwareBundle {
   description: &'static str,
   /// List of packages included in this bundle
   programs: Vec<Package>,
+  /// Logger system for thread communication
+  logger_system: Option<LoggerSystem>,
 }
 
 impl SoftwareBundle {
@@ -320,7 +323,25 @@ impl SoftwareBundle {
       name,
       description,
       programs: Vec::new(),
+      logger_system: None,
     }
+  }
+
+  /// Initializes the logger system for this bundle.
+  /// 
+  /// This sets up the logging infrastructure that will be used by all
+  /// installation threads to communicate with the main thread.
+  pub(crate) fn init_logger(&mut self, log_level: LogLevel) -> LogCollector {
+    let (logger_system, mut collector) = LoggerSystem::new();
+    
+    // Add console output with colors
+    collector.add_output(Box::new(ConsoleOutput::new(true)));
+    
+    // Add level filter using the provided log level
+    collector.add_filter(Box::new(LevelFilter::new(log_level)));
+    
+    self.logger_system = Some(logger_system);
+    collector
   }
 
   /// Adds a package to this bundle.
@@ -340,8 +361,8 @@ impl SoftwareBundle {
     self
   }
 
-  fn installer_thread(program: &Package, os: &config::machine::OS, dry_run: bool) {
-    println!("==> Installing program: {}", program.name); // i want multiple windows in the ui but i i just use println! the multithread will just stack over each other
+  fn installer_thread(program: &Package, os: &config::machine::OS, dry_run: bool, logger: Logger) {
+    logger.info(format!("Installing program: {}", program.name));
     let commands = program
       .mapping
       .get(os)
@@ -349,16 +370,16 @@ impl SoftwareBundle {
 
     // Check prerequisites first
     if !commands.prerequisite_checks.is_empty() {
-      println!("  Checking prerequisites...");
+      logger.info("Checking prerequisites...");
       for check in &commands.prerequisite_checks {
         match check.run(dry_run) {
           Ok(_) => {
-            println!("  Program already installed, skipping installation.");
+            logger.info("Program already installed, skipping installation.");
             return;
           }
           Err(_) => {
             // Prerequisites not met, continue with installation
-            println!("  Prerequisites not met, proceeding with installation.");
+            logger.info("Prerequisites not met, proceeding with installation.");
           }
         }
       }
@@ -366,11 +387,13 @@ impl SoftwareBundle {
 
     for instruction in &commands.install_instructions.install {
       if let Err(e) = instruction.run(dry_run) {
-        eprintln!("  Command failed: {}", e);
+        logger.error(format!("Command failed: {}", e));
         return;
       }
-      println!("  Command executed successfully.");
+      logger.info("Command executed successfully.");
     }
+    
+    logger.info(format!("Completed installation of: {}", program.name));
   }
 
   fn installer(
@@ -381,17 +404,25 @@ impl SoftwareBundle {
     let mut handles = vec![];
 
     for program in &self.programs {
-      let os = os.clone();
-      let program = program.clone();
-      let handle = std::thread::spawn(move || {
-        Self::installer_thread(&program, &os, dry_run);
-      });
-      handles.push(handle);
+      if let Some(ref logger_system) = self.logger_system {
+        let logger = logger_system.create_logger("installer", format!("install-{}", program.name));
+        let os = os.clone();
+        let program = program.clone();
+        let handle = std::thread::spawn(move || {
+          Self::installer_thread(&program, &os, dry_run, logger);
+        });
+        handles.push(handle);
+      } else {
+        return Err("Logger system not initialized. Call init_logger() first.".into());
+      }
     }
 
     for handle in handles {
       if let Err(e) = handle.join() {
-        eprintln!("Thread panicked: {:?}", e);
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("installer", "main".to_string());
+          logger.error(format!("Thread panicked during installation: {:?}", e));
+        }
       }
     }
 
@@ -402,8 +433,9 @@ impl SoftwareBundle {
     program: &Package,
     os: &config::machine::OS,
     dry_run: bool,
+    logger: Logger,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("==> Configuring program: {}", program.name);
+    logger.info(format!("Configuring program: {}", program.name));
     let commands = program
       .mapping
       .get(os)
@@ -411,11 +443,13 @@ impl SoftwareBundle {
 
     for instruction in &commands.configuration_instructions.install {
       if let Err(e) = instruction.run(dry_run) {
-        eprintln!("  Configuration failed: {}", e);
+        logger.error(format!("Configuration failed: {}", e));
         return Err(e);
       }
-      println!("  Configuration applied successfully.");
+      logger.info("Configuration applied successfully.");
     }
+    
+    logger.info(format!("Completed configuration of: {}", program.name));
     Ok(())
   }
 
@@ -429,25 +463,36 @@ impl SoftwareBundle {
     for program in &self.programs {
       if let Some(commands) = program.mapping.get(os) {
         if commands.configuration_instructions.install.is_empty() {
-          println!("No configuration functions for program: {}", program.name);
+          if let Some(ref logger_system) = self.logger_system {
+            let logger = logger_system.create_logger("configurator", "main".to_string());
+            logger.info(format!("No configuration functions for program: {}", program.name));
+          }
           continue;
         }
 
-        let os = os.clone();
-        let program = program.clone();
-        let handle = std::thread::spawn(move || Self::configurator_thread(&program, &os, dry_run));
-        handles.push(handle);
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("configurator", format!("config-{}", program.name));
+          let os = os.clone();
+          let program = program.clone();
+          let handle = std::thread::spawn(move || Self::configurator_thread(&program, &os, dry_run, logger));
+          handles.push(handle);
+        } else {
+          return Err("Logger system not initialized. Call init_logger() first.".into());
+        }
       } else {
-        println!(
-          "No configuration mapping found for program: {}",
-          program.name
-        );
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("configurator", "main".to_string());
+          logger.warn(format!("No configuration mapping found for program: {}", program.name));
+        }
       }
     }
 
     for handle in handles {
       if let Err(e) = handle.join() {
-        eprintln!("Thread panicked: {:?}", e);
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("configurator", "main".to_string());
+          logger.error(format!("Thread panicked during configuration: {:?}", e));
+        }
       }
     }
 
@@ -455,33 +500,44 @@ impl SoftwareBundle {
   }
 
   pub(crate) fn install(
-    &self,
+    &mut self,
     os: &config::machine::OS,
     dry_run: bool,
+    logger_system: &LoggerSystem,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("==> Installing bundle: {}", self.name);
-    println!("Description: {}", self.description);
+    // Use the provided logger system instead of creating our own
+    self.logger_system = Some(logger_system.clone());
+    
+    if let Some(ref logger_system) = self.logger_system {
+      let main_logger = logger_system.create_logger("bundle", "main".to_string());
+      
+      main_logger.info(format!("Installing bundle: {}", self.name));
+      main_logger.info(format!("Description: {}", self.description));
 
-    // Show packages to be installed
-    println!("\nThe following packages will be installed:");
-    for program in &self.programs {
-      println!("  - {} ({})", program.name, program.description);
-    }
-
-    // Interactive confirmation unless in dry-run mode
-    if !dry_run {
-      let response = crate::config::interactive::ask_yes_no(
-        "Do you want to continue with the installation?",
-        true,
-      );
-      if !response {
-        println!("Installation cancelled by user.");
-        return Ok(());
+      // Show packages to be installed
+      main_logger.info("The following packages will be installed:");
+      for program in &self.programs {
+        main_logger.info(format!("  - {} ({})", program.name, program.description));
       }
-    }
 
-    self.installer(os, dry_run)?;
-    self.configurator(os, dry_run)?;
+      // Interactive confirmation unless in dry-run mode
+      if !dry_run {
+        let response = crate::config::interactive::ask_yes_no(
+          "Do you want to continue with the installation?",
+          true,
+        );
+        if !response {
+          main_logger.info("Installation cancelled by user.");
+          return Ok(());
+        }
+      }
+
+      self.installer(os, dry_run)?;
+      self.configurator(os, dry_run)?;
+      
+      main_logger.info("Bundle installation completed successfully!");
+    }
+    
     Ok(())
   }
 
@@ -489,8 +545,9 @@ impl SoftwareBundle {
     program: &Package,
     os: &config::machine::OS,
     dry_run: bool,
+    logger: Logger,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("==> Uninstalling program: {}", program.name);
+    logger.info(format!("Uninstalling program: {}", program.name));
     let commands = program.mapping.get(os).expect(&format!(
       "No uninstallation commands found for OS: {:?}",
       os
@@ -498,11 +555,13 @@ impl SoftwareBundle {
 
     for instruction in &commands.uninstall_instructions.install {
       if let Err(e) = instruction.run(dry_run) {
-        eprintln!("  Uninstallation failed: {}", e);
+        logger.error(format!("Uninstallation failed: {}", e));
         return Err(e);
       }
-      println!("  Uninstallation executed successfully.");
+      logger.info("Uninstallation executed successfully.");
     }
+    
+    logger.info(format!("Completed uninstallation of: {}", program.name));
     Ok(())
   }
 
@@ -516,25 +575,36 @@ impl SoftwareBundle {
     for program in &self.programs {
       if let Some(commands) = program.mapping.get(os) {
         if commands.uninstall_instructions.install.is_empty() {
-          println!("No uninstallation functions for program: {}", program.name);
+          if let Some(ref logger_system) = self.logger_system {
+            let logger = logger_system.create_logger("uninstaller", "main".to_string());
+            logger.info(format!("No uninstallation functions for program: {}", program.name));
+          }
           continue;
         }
 
-        let os = os.clone();
-        let program = program.clone();
-        let handle = std::thread::spawn(move || Self::uninstaller_thread(&program, &os, dry_run));
-        handles.push(handle);
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("uninstaller", format!("uninstall-{}", program.name));
+          let os = os.clone();
+          let program = program.clone();
+          let handle = std::thread::spawn(move || Self::uninstaller_thread(&program, &os, dry_run, logger));
+          handles.push(handle);
+        } else {
+          return Err("Logger system not initialized. Call init_logger() first.".into());
+        }
       } else {
-        println!(
-          "No uninstallation mapping found for program: {}",
-          program.name
-        );
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("uninstaller", "main".to_string());
+          logger.warn(format!("No uninstallation mapping found for program: {}", program.name));
+        }
       }
     }
 
     for handle in handles {
       if let Err(e) = handle.join() {
-        eprintln!("Thread panicked: {:?}", e);
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("uninstaller", "main".to_string());
+          logger.error(format!("Thread panicked during uninstallation: {:?}", e));
+        }
       }
     }
 
@@ -545,8 +615,9 @@ impl SoftwareBundle {
     program: &Package,
     os: &config::machine::OS,
     dry_run: bool,
+    logger: Logger,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("==> Deconfiguring program: {}", program.name);
+    logger.info(format!("Deconfiguring program: {}", program.name));
     let commands = program.mapping.get(os).expect(&format!(
       "No deconfiguration commands found for OS: {:?}",
       os
@@ -554,11 +625,13 @@ impl SoftwareBundle {
 
     for instruction in &commands.deconfiguration_instructions.install {
       if let Err(e) = instruction.run(dry_run) {
-        eprintln!("  Deconfiguration failed: {}", e);
+        logger.error(format!("Deconfiguration failed: {}", e));
         return Err(e);
       }
-      println!("  Deconfiguration applied successfully.");
+      logger.info("Deconfiguration applied successfully.");
     }
+    
+    logger.info(format!("Completed deconfiguration of: {}", program.name));
     Ok(())
   }
 
@@ -572,26 +645,36 @@ impl SoftwareBundle {
     for program in &self.programs {
       if let Some(commands) = program.mapping.get(os) {
         if commands.deconfiguration_instructions.install.is_empty() {
-          println!("No deconfiguration functions for program: {}", program.name);
+          if let Some(ref logger_system) = self.logger_system {
+            let logger = logger_system.create_logger("deconfigurator", "main".to_string());
+            logger.info(format!("No deconfiguration functions for program: {}", program.name));
+          }
           continue;
         }
 
-        let os = os.clone();
-        let program = program.clone();
-        let handle =
-          std::thread::spawn(move || Self::deconfigurator_thread(&program, &os, dry_run));
-        handles.push(handle);
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("deconfigurator", format!("deconfig-{}", program.name));
+          let os = os.clone();
+          let program = program.clone();
+          let handle = std::thread::spawn(move || Self::deconfigurator_thread(&program, &os, dry_run, logger));
+          handles.push(handle);
+        } else {
+          return Err("Logger system not initialized. Call init_logger() first.".into());
+        }
       } else {
-        println!(
-          "No deconfiguration mapping found for program: {}",
-          program.name
-        );
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("deconfigurator", "main".to_string());
+          logger.warn(format!("No deconfiguration mapping found for program: {}", program.name));
+        }
       }
     }
 
     for handle in handles {
       if let Err(e) = handle.join() {
-        eprintln!("Thread panicked: {:?}", e);
+        if let Some(ref logger_system) = self.logger_system {
+          let logger = logger_system.create_logger("deconfigurator", "main".to_string());
+          logger.error(format!("Thread panicked during deconfiguration: {:?}", e));
+        }
       }
     }
 
@@ -599,33 +682,44 @@ impl SoftwareBundle {
   }
 
   pub(crate) fn uninstall(
-    &self,
+    &mut self,
     os: &config::machine::OS,
     dry_run: bool,
+    logger_system: &LoggerSystem,
   ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("==> Uninstalling bundle: {}", self.name);
-    println!("Description: {}", self.description);
+    // Use the provided logger system instead of creating our own
+    self.logger_system = Some(logger_system.clone());
+    
+    if let Some(ref logger_system) = self.logger_system {
+      let main_logger = logger_system.create_logger("bundle", "main".to_string());
+      
+      main_logger.info(format!("Uninstalling bundle: {}", self.name));
+      main_logger.info(format!("Description: {}", self.description));
 
-    // Show packages to be uninstalled
-    println!("\nThe following packages will be uninstalled:");
-    for program in &self.programs {
-      println!("  - {} ({})", program.name, program.description);
-    }
-
-    // Interactive confirmation unless in dry-run mode
-    if !dry_run {
-      let response = crate::config::interactive::ask_yes_no(
-        "Are you sure you want to uninstall these packages?",
-        false,
-      );
-      if !response {
-        println!("Uninstallation cancelled by user.");
-        return Ok(());
+      // Show packages to be uninstalled
+      main_logger.info("The following packages will be uninstalled:");
+      for program in &self.programs {
+        main_logger.info(format!("  - {} ({})", program.name, program.description));
       }
-    }
 
-    self.uninstaller(os, dry_run)?;
-    self.deconfigurator(os, dry_run)?;
+      // Interactive confirmation unless in dry-run mode
+      if !dry_run {
+        let response = crate::config::interactive::ask_yes_no(
+          "Are you sure you want to uninstall these packages?",
+          false,
+        );
+        if !response {
+          main_logger.info("Uninstallation cancelled by user.");
+          return Ok(());
+        }
+      }
+
+      self.uninstaller(os, dry_run)?;
+      self.deconfigurator(os, dry_run)?;
+      
+      main_logger.info("Bundle uninstallation completed successfully!");
+    }
+    
     Ok(())
   }
 }

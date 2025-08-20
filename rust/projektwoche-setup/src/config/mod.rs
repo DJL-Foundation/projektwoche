@@ -21,6 +21,7 @@
 pub mod interactive;
 pub mod machine;
 
+use crate::logger::LogLevel;
 use confy::ConfyError;
 use serde::{Deserialize, Serialize};
 use std::process::exit;
@@ -29,11 +30,18 @@ use std::process::exit;
 ///
 /// This struct is automatically populated with detected system information
 /// and persisted to disk for future use.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Config {
   /// Machine-specific information (OS, architecture)
   #[serde(default)]
   pub(crate) machine: machine::Machine,
+  /// Log level configuration
+  #[serde(default = "default_log_level")]
+  pub log_level: LogLevel,
+}
+
+fn default_log_level() -> LogLevel {
+  LogLevel::Info
 }
 
 /// Loads or creates the application configuration.
@@ -58,6 +66,20 @@ pub fn use_config() -> Result<Config, Box<dyn std::error::Error>> {
       exit(1)
     }
   }
+}
+
+/// Saves the configuration to disk.
+///
+/// # Arguments
+///
+/// * `config` - The configuration to save
+///
+/// # Returns
+///
+/// Returns Ok(()) on success, or an error if the save operation fails.
+pub fn save_config(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+  confy::store("prowo-setup", "config", config)?;
+  Ok(())
 }
 
 // May implement a Lockfile system in the future when needing to expand to multiple bundles

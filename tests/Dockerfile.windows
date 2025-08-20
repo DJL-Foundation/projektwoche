@@ -1,20 +1,19 @@
 # escape=`
 
-FROM mcr.microsoft.com/windows/server:ltsc2025
+FROM mcr.microsoft.com/windows/servercore:ltsc2025-amd64
 
 # Set PowerShell as the default shell
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-# Install Chocolatey
-RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
-    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+# Install winget
+RUN Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopInstaller_8wekyb3d8bbwe
 
-# Install Git via Chocolatey
-RUN choco install git -y
+# Install Git via winget
+RUN winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
 
-# Install Visual Studio Build Tools
-RUN choco install visualstudio2022buildtools -y
+# Install Visual Studio Build Tools via winget
+RUN winget install --id Microsoft.VisualStudio.2022.BuildTools -e --source winget --accept-package-agreements --accept-source-agreements
+
 
 # Install Rust
 RUN Invoke-WebRequest -Uri 'https://win.rustup.rs/x86_64' -OutFile 'rustup-init.exe'; `
@@ -22,7 +21,7 @@ RUN Invoke-WebRequest -Uri 'https://win.rustup.rs/x86_64' -OutFile 'rustup-init.
     Remove-Item .\rustup-init.exe
 
 # Add Rust to PATH
-ENV PATH="C:\Users\ContainerUser\.cargo\bin;${PATH}"
+RUN [Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';C:\Users\ContainerAdministrator\.cargo\bin', [EnvironmentVariableTarget]::Machine)
 
 # Install Bun
 RUN powershell -c "irm bun.sh/install.ps1 | iex"
