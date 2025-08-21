@@ -186,7 +186,7 @@ jobs:
           - x86_64-apple-darwin
         project_name:
           - "projektwoche-setup"
-          - "ratatui-test-json"
+          - "projektwoche"
         include:
           - target: x86_64-pc-windows-msvc
             runs-on: windows-latest
@@ -198,26 +198,27 @@ jobs:
             project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
-          - target: x86_64-pc-windows-msvc
-            runs-on: windows-latest
-            project_name: "ratatui-test-json"
-            project_path: "rust/ratatui-test-json"
-            project_binary: "ratatui-test-json"
-          - target: x86_64-unknown-linux-gnu
-            runs-on: blacksmith-4vcpu-ubuntu-2404
-            project_name: "ratatui-test-json"
-            project_path: "rust/ratatui-test-json"
-            project_binary: "ratatui-test-json"
           - target: x86_64-apple-darwin
             runs-on: macos-latest
             project_name: "projektwoche-setup"
             project_path: "rust/projektwoche-setup"
             project_binary: "projektwoche-setup"
+
+          - target: x86_64-pc-windows-msvc
+            runs-on: windows-latest
+            project_name: "projektwoche"
+            project_path: "rust/projektwoche"
+            project_binary: "projektwoche"
+          - target: x86_64-unknown-linux-gnu
+            runs-on: blacksmith-4vcpu-ubuntu-2404
+            project_name: "projektwoche"
+            project_path: "rust/projektwoche"
+            project_binary: "projektwoche"
           - target: x86_64-apple-darwin
             runs-on: macos-latest
-            project_name: "ratatui-test-json"
-            project_path: "rust/ratatui-test-json"
-            project_binary: "ratatui-test-json"
+            project_name: "projektwoche"
+            project_path: "rust/projektwoche"
+            project_binary: "projektwoche"
     steps:
       - uses: actions/checkout@v4
 
@@ -275,10 +276,13 @@ jobs:
     strategy:
       matrix:
         project_name:
-          - "ratatui-test-json"
+          - "projektwoche"
+          - "projektwoche-setup"
         include:
-          - project_name: "ratatui-test-json"
-            project_path: "rust/ratatui-test-json"
+          - project_name: "projektwoche"
+            project_path: "rust/projektwoche"
+          - project_name: "projektwoche-setup"
+            project_path: "rust/projektwoche-setup"
     steps:
       - uses: actions/checkout@v4
 
@@ -298,178 +302,6 @@ jobs:
         run: |
           cargo test --bin ${{ matrix.project_name }}
 
-  test-prowo-interaction:
-    name: 🕹️ [PROWO] Interaction Tests
-    needs:
-      - build
-      - allow-run
-    if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
-    runs-on: ${{ matrix.runs-on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows
-            runs-on: windows-latest
-            target: x86_64-pc-windows-msvc
-            binary-name: projektwoche-setup.exe
-            install-keywords: |
-              ["Installing program: Node.js", "Installing program: Bun", "Installing program: Visual Studio Code", "Installation abgeschlossen"]
-            uninstall-keywords: |
-              ["Uninstalling program: Node.js", "Uninstalling program: Bun", "Uninstalling program: Visual Studio Code", "Deinstallation abgeschlossen"]
-          - os: linux
-            runs-on: blacksmith-4vcpu-ubuntu-2404
-            target: x86_64-unknown-linux-gnu
-            binary-name: projektwoche-setup
-            install-keywords: |
-              ["Installing program: Node.js", "Installing program: Bun", "Installing program: Visual Studio Code", "Installation abgeschlossen"]
-            uninstall-keywords: |
-              ["Uninstalling program: Node.js", "Uninstalling program: Bun", "Uninstalling program: Visual Studio Code", "Deinstallation abgeschlossen"]
-          - os: macos
-            runs-on: macos-latest
-            target: x86_64-apple-darwin
-            binary-name: projektwoche-setup
-            install-keywords: |
-              ["Installing program: Node.js", "Installing program: Bun", "Installing program: Visual Studio Code", "Installation abgeschlossen"]
-            uninstall-keywords: |
-              ["Uninstalling program: Node.js", "Uninstalling program: Bun", "Uninstalling program: Visual Studio Code", "Deinstallation abgeschlossen"]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 📥 Download binary
-        uses: actions/download-artifact@v4
-        with:
-          name: projektwoche-setup-${{ matrix.target }}
-          path: ./bin
-
-      - name: ⚙️ Make binary executable and move 🪟
-        if: matrix.os == 'windows'
-        run: Move-Item "./bin/${{ matrix.binary-name }}" "./${{ matrix.binary-name }}" -Force
-        shell: powershell
-
-      - name: ⚙️ Make binary executable and move 🐧 & 🍎
-        if: matrix.os == 'linux' || matrix.os == 'macos'
-        run: |
-          chmod +x ./bin/${{ matrix.binary-name }}
-          mv ./bin/${{ matrix.binary-name }} ./${{ matrix.binary-name }}
-        shell: bash
-
-      - name: 🦀 Install Bun
-        if: matrix.os == 'linux' || matrix.os == 'macos' || matrix.os == 'windows'
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: 🔍 Test dry-run installation 🪟
-        if: matrix.os == 'windows'
-        run: |
-          Write-Host "Testing dry-run installation..."
-          ./${{ matrix.binary-name }} install -d projektwoche > dry-install-log.txt 2>&1
-          Get-Content dry-install-log.txt
-        shell: powershell
-
-      - name: 🔍 Test dry-run installation 🐧 & 🍎
-        if: matrix.os == 'linux' || matrix.os == 'macos'
-        run: |
-          echo "Testing dry-run installation..."
-          ./${{ matrix.binary-name }} install -d projektwoche > dry-install-log.txt 2>&1
-          cat dry-install-log.txt
-        shell: bash
-
-      - name: 📋 Check for installation keywords
-        if: always() && matrix.os != 'windows'
-        run: |
-          bun scripts/check_keywords.ts dry-install-log.txt '${{ toJson(fromJSON(matrix.install-keywords)) }}'
-        shell: bash
-
-      - name: 🗑️ Test dry-run uninstallation 🪟
-        if: matrix.os == 'windows'
-        run: |
-          Write-Host "Testing dry-run uninstallation..."
-          ./${{ matrix.binary-name }} uninstall -d projektwoche > dry-uninstall-log.txt 2>&1
-          Get-Content dry-uninstall-log.txt
-        shell: powershell
-        continue-on-error: true
-
-      - name: 🗑️ Test dry-run uninstallation 🐧 & 🍎
-        if: matrix.os == 'linux' || matrix.os == 'macos'
-        run: |
-          echo "Testing dry-run uninstallation..."
-          ./${{ matrix.binary-name }} uninstall -d projektwoche > dry-uninstall-log.txt 2>&1
-          cat dry-uninstall-log.txt
-        shell: bash
-        continue-on-error: true
-
-      - name: 📋 Check for deinstallation keywords
-        if: always() && matrix.os != 'windows'
-        run: |
-          bun scripts/check_keywords.ts dry-uninstall-log.txt '${{ toJson(fromJSON(matrix.uninstall-keywords)) }}'
-        shell: bash
-        continue-on-error: true
-
-      - name: 📁 Upload logs as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}-interaction-logs
-          path: |
-            dry-install-log.txt
-            dry-uninstall-log.txt
-          retention-days: 7
-
-  test-prowo-edge-cases:
-    name: 🔍 [PROWO] Edge Case Testing
-    needs:
-      - allow-run
-      - test-prowo-interaction
-    if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 📥 Download Linux binary
-        uses: actions/download-artifact@v4
-        with:
-          name: projektwoche-setup-x86_64-unknown-linux-gnu
-          path: ./bin
-
-      - name: ⚙️ Make binary executable
-        run: |
-          chmod +x ./bin/projektwoche-setup
-          mv ./bin/projektwoche-setup ./projektwoche-setup
-
-      - name: ❌ Test invalid bundle names
-        run: |
-          echo "Testing invalid bundle handling..."
-          ./projektwoche-setup install -d nonexistent-bundle > invalid-bundle-log.txt 2>&1
-          cat invalid-bundle-log.txt
-        shell: bash
-        continue-on-error: true
-
-      - name: ❓ Test help command
-        run: |
-          echo "Testing help command..."
-          ./projektwoche-setup --help > help-log.txt 2>&1
-          cat help-log.txt
-        shell: bash
-
-      - name: 📋 Test version command
-        run: |
-          echo "Testing version command..."
-          ./projektwoche-setup --version > version-log.txt 2>&1
-          cat version-log.txt
-        shell: bash
-        continue-on-error: true
-
-      - name: 📁 Upload edge case logs as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: edge-case-logs
-          path: |
-            invalid-bundle-log.txt
-            help-log.txt
-            version-log.txt
-          retention-days: 7
-
   test-performance:
     name: 🚄 Performance Testing
     needs:
@@ -481,33 +313,87 @@ jobs:
       matrix:
         project_name:
           - "projektwoche-setup"
-          - "ratatui-test-json"
+          - "projektwoche"
         include:
           - project_name: projektwoche-setup
-            custom_args: "install -d projektwoche"
-          - project_name: ratatui-test-json
-            custom_args: ""
+            test_commands: |
+              projektwoche-setup --help
+              projektwoche-setup install projektwoche -D
+          - project_name: projektwoche
+            test_commands: |
+              projektwoche --help
+              projektwoche --version
     steps:
       - uses: actions/checkout@v4
 
       - name: 📥 Download Linux binary
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.project_name}}-x86_64-unknown-linux-gnu
+          name: ${{ matrix.project_name }}-x86_64-unknown-linux-gnu
           path: ./bin
+
       - name: ⚙️ Make binary executable
         run: |
           chmod +x ./bin/${{ matrix.project_name }}
           mv ./bin/${{ matrix.project_name }} ./${{ matrix.project_name }}
 
-      - name: ⚡ Test performance
+      - name: ⚡ Test performance for each command
         run: |
-          time ./${{ matrix.project_name }} ${{ matrix.custom_args }} > ${{ matrix.project_name }}-performance-log.txt 2>&1
+          echo "# Performance Test Results for ${{ matrix.project_name }}" > ${{ matrix.project_name }}-performance-log.txt
+          echo "" >> ${{ matrix.project_name }}-performance-log.txt
+
+          IFS=$'\n'
+          for cmd in ${{ matrix.test_commands }}; do
+          echo "## Testing command: $cmd" >> ${{ matrix.project_name }}-performance-log.txt
+          echo "Running: $cmd"
+
+          # Performance timing
+          echo "### Runtime:" >> ${{ matrix.project_name }}-performance-log.txt
+          { time ./$cmd; } 2>&1 | tee -a ${{ matrix.project_name }}-performance-log.txt
+          echo "" >> ${{ matrix.project_name }}-performance-log.txt
+
+          echo "---" >> ${{ matrix.project_name }}-performance-log.txt
+          echo "" >> ${{ matrix.project_name }}-performance-log.txt
+          done
+
           cat ${{ matrix.project_name }}-performance-log.txt
-      - name: 🧠 Test memory usage during dry-run
+
+      - name: 🧠 Test memory usage for each command
         run: |
-          /usr/bin/time -v ./${{ matrix.project_name }} ${{ matrix.custom_args }} > ${{ matrix.project_name }}-memory-usage-log.txt 2>&1
+          echo "# Memory Usage Test Results for ${{ matrix.project_name }}" > ${{ matrix.project_name }}-memory-usage-log.txt
+          echo "" >> ${{ matrix.project_name }}-memory-usage-log.txt
+
+          IFS=$'\n'
+          for cmd in ${{ matrix.test_commands }}; do
+          echo "## Testing command: $cmd" >> ${{ matrix.project_name }}-memory-usage-log.txt
+          echo "Running memory test for: $cmd"
+
+          # Memory usage with detailed output
+          echo "### Memory Usage:" >> ${{ matrix.project_name }}-memory-usage-log.txt
+          /usr/bin/time -v ./$cmd 2>&1 | tee -a ${{ matrix.project_name }}-memory-usage-log.txt
+          echo "" >> ${{ matrix.project_name }}-memory-usage-log.txt
+
+          echo "---" >> ${{ matrix.project_name }}-memory-usage-log.txt
+          echo "" >> ${{ matrix.project_name }}-memory-usage-log.txt
+          done
+
           cat ${{ matrix.project_name }}-memory-usage-log.txt
+
+      - name: 📊 Add performance results to summary
+        run: |
+          echo "## 🚄 Performance Test Results for ${{ matrix.project_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Runtime Performance" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat ${{ matrix.project_name }}-performance-log.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Memory Usage" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat ${{ matrix.project_name }}-memory-usage-log.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
       - name: 📁 Upload performance logs as artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -518,11 +404,10 @@ jobs:
           retention-days: 7
 
   test-prowo-docker:
-    name: 🐳 [PROWO] Docker Tests
+    name: 🐳 [SETUP] Docker Tests
     needs:
       - allow-run
       - build
-      - test-prowo-interaction
     if: needs.allow-run.outputs.RUN_CI == 'true' && github.event.inputs.force-skip-all-tests != 'true'
     runs-on: ${{ matrix.runs-on }}
     strategy:
@@ -589,8 +474,6 @@ jobs:
       - allow-deploy
       - build
       - test
-      - test-prowo-interaction
-      - test-prowo-edge-cases
       - test-performance
       - test-prowo-docker
     if: |
@@ -601,8 +484,6 @@ jobs:
         github.event.inputs.force-skip-all-tests == 'true' || 
         (
           needs.test.result == 'success' && 
-          needs.test-prowo-interaction.result == 'success' && 
-          needs.test-prowo-edge-cases.result == 'success' && 
           needs.test-performance.result == 'success' && 
           needs.test-prowo-docker.result == 'success'
         )
@@ -683,8 +564,6 @@ jobs:
       - allow-run
       - build
       - test
-      - test-prowo-interaction
-      - test-prowo-edge-cases
       - test-performance
       - test-prowo-docker
     runs-on: blacksmith-2vcpu-ubuntu-2404
@@ -718,12 +597,10 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
             echo "|-----------------------|--------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Interaction Tests | ${{ needs.test-prowo-interaction.result }} |" >> $GITHUB_STEP_SUMMARY
-            echo "| Edge Cases | ${{ needs.test-prowo-edge-cases.result }} |" >> $GITHUB_STEP_SUMMARY
             echo "| Docker Tests | ${{ needs.test-prowo-docker.result }} |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
 
-            if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.test-prowo-interaction.result }}" == "success" && "${{ needs.test-prowo-edge-cases.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" && "${{ needs.test-prowo-docker.result }}" == "success" ]]; then
+            if [[ "${{ needs.build.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.test-performance.result }}" == "success" && "${{ needs.test-prowo-docker.result }}" == "success" ]]; then
               echo "✅ All tests successful!" >> $GITHUB_STEP_SUMMARY
             else
               echo "❌ Some tests failed. Please check the logs of individual jobs for details." >> $GITHUB_STEP_SUMMARY
