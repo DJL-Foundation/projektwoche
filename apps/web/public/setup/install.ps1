@@ -147,9 +147,11 @@ function Install-ProwoSetup {
   }
 
   $BaseURL = "https://github.com/djl-foundation/projektwoche/releases"
-  $URL = "$BaseURL/$(if ($Version -eq "latest") { "latest/download" } else { "download/$Version" })/prowo-setup-$Target.zip"
+  $ExeName = "projektwoche-setup.exe"
+  $LocalName = "prowo-setup.exe"
+  $URL = "$BaseURL/$(if ($Version -eq "latest") { "latest/download" } else { "download/$Version" })/$ExeName"
 
-  $ZipPath = "${ProwoSetupBin}\prowo-setup-$Target.zip"
+  $ExePath = "${ProwoSetupBin}\$LocalName"
 
   $DisplayVersion = $(
     if ($Version -eq "latest") { "prowo-setup" }
@@ -158,47 +160,28 @@ function Install-ProwoSetup {
   )
 
   $null = mkdir -Force $ProwoSetupBin
-  Remove-Item -Force $ZipPath -ErrorAction SilentlyContinue
+  Remove-Item -Force $ExePath -ErrorAction SilentlyContinue
 
-  # curl.exe is faster than PowerShell 5's 'Invoke-WebRequest'
-  # note: 'curl' is an alias to 'Invoke-WebRequest'. so the exe suffix is required
+  # Download the executable directly
   if (-not $DownloadWithoutCurl) {
-    curl.exe "-#SfLo" "$ZipPath" "$URL" 
+    curl.exe "-#SfLo" "$ExePath" "$URL"
   }
   if ($DownloadWithoutCurl -or ($LASTEXITCODE -ne 0)) {
-    Write-Warning "The command 'curl.exe $URL -o $ZipPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
+    Write-Warning "The command 'curl.exe $URL -o $ExePath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
     try {
-      # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
-      # some machines
-      Invoke-RestMethod -Uri $URL -OutFile $ZipPath
+      Invoke-RestMethod -Uri $URL -OutFile $ExePath
     } catch {
       Write-Output "Install Failed - could not download $URL"
-      Write-Output "The command 'Invoke-RestMethod $URL -OutFile $ZipPath' exited with code ${LASTEXITCODE}`n"
+      Write-Output "The command 'Invoke-RestMethod $URL -OutFile $ExePath' exited with code ${LASTEXITCODE}`n"
       return 1
     }
   }
 
-  if (!(Test-Path $ZipPath)) {
+  if (!(Test-Path $ExePath)) {
     Write-Output "Install Failed - could not download $URL"
-    Write-Output "The file '$ZipPath' does not exist. Did an antivirus delete it?`n"
+    Write-Output "The file '$ExePath' does not exist. Did an antivirus delete it?`n"
     return 1
   }
-
-  try {
-    $lastProgressPreference = $global:ProgressPreference
-    $global:ProgressPreference = 'SilentlyContinue';
-    Expand-Archive "$ZipPath" "$ProwoSetupBin" -Force
-    $global:ProgressPreference = $lastProgressPreference
-    if (!(Test-Path "${ProwoSetupBin}\prowo-setup.exe")) {
-      throw "The file '${ProwoSetupBin}\prowo-setup.exe' does not exist. Download is corrupt or intercepted Antivirus?`n"
-    }
-  } catch {
-    Write-Output "Install Failed - could not unzip $ZipPath"
-    Write-Error $_
-    return 1
-  }
-
-  Remove-Item $ZipPath -Force
 
   $ProwoSetupVersion = "$(& "${ProwoSetupBin}\prowo-setup.exe" --version 2>&1)"
   if ($LASTEXITCODE -eq 3221225781 -or $LASTEXITCODE -eq -1073741515) { # STATUS_DLL_NOT_FOUND

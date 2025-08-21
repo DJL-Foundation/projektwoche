@@ -90,11 +90,27 @@ check_version() {
 
 download_and_install() {
     print_message info "Downloading ${ORANGE}prowo-setup ${GREEN}version: ${YELLOW}$specific_version ${GREEN}..."
-    mkdir -p prowo-setup-tmp && cd prowo-setup-tmp
-    curl -# -L -o "$filename" "$url"
-    unzip -q "$filename"
-    mv prowo-setup "$INSTALL_DIR"
-    cd .. && rm -rf prowo-setup-tmp
+    case "$os" in
+        linux)
+            exe_name="projektwoche-setup"
+            local_name="prowo-setup"
+            ;;
+        windows)
+            exe_name="projektwoche-setup.exe"
+            local_name="prowo-setup.exe"
+            ;;
+        darwin)
+            exe_name="projektwoche-setup.apple-darwin"
+            local_name="prowo-setup"
+            ;;
+        *)
+            print_message error "Unknown OS for executable download: $os"
+            exit 1
+            ;;
+    esac
+    url="https://github.com/djl-foundation/projektwoche/releases/$(if [ -z "$requested_version" ]; then echo "latest/download"; else echo "download/v${requested_version}"; fi)/$exe_name"
+    curl -# -L -o "$INSTALL_DIR/$local_name" "$url"
+    chmod +x "$INSTALL_DIR/$local_name"
 }
 
 check_version

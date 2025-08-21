@@ -619,19 +619,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: projektwoche-setup-x86_64-unknown-linux-gnu
-          path: ./bin
+          path: ./bin/linux
 
       - name: 📥 Download Windows artifact
         uses: actions/download-artifact@v4
         with:
           name: projektwoche-setup-x86_64-pc-windows-msvc
-          path: ./bin
+          path: ./bin/windows
 
       - name: 📥 Download macOS artifact
         uses: actions/download-artifact@v4
         with:
           name: projektwoche-setup-x86_64-apple-darwin
-          path: ./bin
+          path: ./bin/apple-darwin
 
       - name: 📋 Extract version from Cargo.toml
         id: extract-version
@@ -639,6 +639,23 @@ jobs:
           VERSION=$(grep '^version' rust/projektwoche-setup/Cargo.toml | head -n 1 | awk -F\" '{print $2}')
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
+
+      - name: Rename Macos Executable
+        run: |
+          mv ./bin/apple-darwin/projektwoche-setup ./bin/apple-darwin/projektwoche-setup.apple-darwin
+
+      - name: DEBUG step
+        run: |
+          ls -lah ./bin
+          echo "Debugging information for ./bin:"
+          echo "-----------------------------------"
+          file_count=$(find ./bin -type f | wc -l)
+          dir_count=$(find ./bin -type d | wc -l)
+          echo "Total files: $file_count"
+          echo "Total directories: $dir_count"
+          echo "-----------------------------------"
+          echo ""
+          tree
 
       - name: 📦 Create Release
         uses: softprops/action-gh-release@v2
@@ -651,9 +668,9 @@ jobs:
             - This release includes the latest version of the Projektwoche Setup tool.
             - Binaries for Linux, Windows, and macOS are included.
           files: |
-            ./bin/projektwoche-setup-x86_64-unknown-linux-gnu/projektwoche-setup
-            ./bin/projektwoche-setup-x86_64-pc-windows-msvc/projektwoche-setup.exe
-            ./bin/projektwoche-setup-x86_64-apple-darwin/projektwoche-setup
+            ./bin/linux/projektwoche-setup
+            ./bin/windows/projektwoche-setup.exe
+            ./bin/apple-darwin/projektwoche-setup.apple-darwin
           draft: true
           prerelease: true
           fail_on_unmatched_files: true
