@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Ledger&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/motion@latest/dist/motion.js"></script>
+    <title>Beispiel Webseite von Jack - Toppings</title>
+    <style>
+      .big {
+        height: 90vh;
+        width: 100vw;
+      }
+      .center-all {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      body {
+        text-align: center;
+        font-style: normal;
+        background-color: hsl(9, 87%, 97%);
+        color: hsl(11, 88%, 10%);
+      }
+
+      div {
+        margin: 1rem;
+        padding: 0;
+      }
+      .nomargin div {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      h1 {
+        font-family: "Ledger", sans-serif;
+        font-weight: 400;
+      }
+
+      p {
+        font-family: "Geist", sans-serif;
+        font-weight: 600;
+        font-size: 1.2rem;
+      }
+
+      .header-flex {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .logo-container {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 4rem;
+        padding-left: 2rem;
+      }
+      .header-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .greetings {
+        background-color: hsl(20, 61%, 80%);
+        color: hsl(188, 84%, 61%);
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Draggable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js"></script>
+  </head>
+  <body class="big">
+    <header>
+      <div class="header-flex nomargin">
+        <a href="/projekte" class="header-flex">
+          <div class="logo-container">
+            <img
+              src="https://prowo.hackclub-stade.de/logo.png"
+              alt="Hackclub Stade Logo"
+              style="object-fit: contain; width: 100%; height: 100%"
+            />
+          </div>
+          <span class="header-title"> Back to Projekte </span>
+        </a>
+      </div>
+    </header>
+    <main class="center-all">
+      <h1>This time a bit Cooler!!!</h1>
+      <p id="header-text">With a Header!!! (Hover)</p>
+      <script>
+        gsap.set("#header-text", {
+          x: -window.innerWidth,
+          y: -window.innerHeight,
+          scale: 5,
+        });
+
+        gsap.to("#header-text", {
+          x: 0,
+          y: 0,
+          scale: 1,
+          duration: 1.5,
+          ease: "power2.out",
+        });
+
+        const headerText = document.getElementById("header-text");
+
+        headerText.addEventListener("mouseenter", () => {
+          gsap.to("#header-text", {
+            scale: 1.2,
+            fontFamily: "Ledger, sans-serif",
+            fontWeight: 900,
+            duration: 0.3,
+            ease: "power2.out",
+          });
+        });
+
+        headerText.addEventListener("mouseleave", () => {
+          gsap.to("#header-text", {
+            scale: 1,
+            fontFamily: "Geist, sans-serif",
+            fontWeight: 600,
+            duration: 0.3,
+            ease: "power2.out",
+          });
+        });
+      </script>
+    </main>
+    <div class="center-all greetings">
+      <div class="center-all" style="height: 40vh">
+        <img
+          id="falling-logo"
+          src="https://prowo.hackclub-stade.de/logo.png"
+          alt="Hackclub Stade Logo"
+          height="100px"
+          style="position: absolute; cursor: grab"
+        />
+        <script>
+          gsap.registerPlugin(Draggable);
+          gsap.registerPlugin(CustomEase);
+
+          const logo = document.getElementById("falling-logo");
+          let gravityTween;
+
+          function applyGravity() {
+            gravityTween = gsap.to("#falling-logo", {
+              y: window.innerHeight - 500,
+              duration: 0.25,
+              ease: CustomEase.create(
+                "custom",
+                "M0,0 C0.392,1 0.658,1.197 0.801,1.07 0.913,0.886 1,1 1,1 "
+              ),
+            });
+          }
+
+          gsap.set("#falling-logo", {
+            x: 100,
+            y: 50,
+          });
+
+          applyGravity();
+
+          Draggable.create("#falling-logo", {
+            bounds: window,
+            onDragStart: function () {
+              logo.style.cursor = "grabbing";
+              if (gravityTween) {
+                gravityTween.kill();
+              }
+            },
+            onDragEnd: function () {
+              logo.style.cursor = "grab";
+              applyGravity();
+            },
+          });
+        </script>
+      </div>
+      <p class="muted">Grüße vom Hackclub Stade</p>
+    </div>
+  </body>
+</html>
