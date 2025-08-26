@@ -58,7 +58,7 @@ if (!participantData) {
     ) : (
       <>
         {/* Projects Grid */}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {projects.map(({ projectName, project }) => {
             return (
               <ProjectCard
@@ -68,7 +68,6 @@ if (!participantData) {
                 project={project}
                 year={activeYear}
                 previewImageUrl={getPreviewImageUrl(activeYear, participant as string, projectName)}
-                size="compact"
               />
             );
           })}

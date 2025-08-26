@@ -2,6 +2,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
+      "dependsOn": ["prowo-ui#build"],
       "outputs": [".vercel/output/**"]
     }
   }

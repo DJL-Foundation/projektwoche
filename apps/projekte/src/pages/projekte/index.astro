@@ -4,6 +4,8 @@ import ProjectCard from "~/components/ProjectCard.astro";
 import { Badge } from "prowo-ui/ui/badge";
 import { Button } from "prowo-ui/ui/button";
 import { getAllProjectsForYear, getWorkshopYear, getAvailableYears, getActiveYear, getPreviewImageUrl } from "~/lib/projects";
+import { buttonVariants } from "prowo-ui/ui/button";
+import { cn } from "prowo-ui/lib/utils"
 
 const activeYear = getActiveYear();
 const availableYears = getAvailableYears();
@@ -43,13 +45,12 @@ const workshopMeta = workshopYear?.['!'];
       <div class="flex items-center gap-2 p-1 bg-muted rounded-lg">
         <span class="text-sm text-muted-foreground mx-2">Jahr:</span>
         {availableYears.map((year) => (
-        <Button
-          variant={year === activeYear ? "default" : "ghost"}
-          size="sm"
-          onClick={year === activeYear ? undefined : () => window.location.href = `/projekte/${year}`}
+        <a
+          class={cn(buttonVariants({ variant: year === activeYear ? "default" : "ghost", size: "sm" }))}
+          href={`/projekte/${year}`}
         >
           {year}
-        </Button>
+        </a>
         ))}
       </div>
       </div>
@@ -74,7 +75,6 @@ const workshopMeta = workshopYear?.['!'];
               project={project}
               year={activeYear}
               previewImageUrl={getPreviewImageUrl(activeYear, username, projectName)}
-              size="compact"
             />
           ))}
         </div>
@@ -87,13 +87,12 @@ const workshopMeta = workshopYear?.['!'];
         <div class="flex items-center gap-2 p-1 bg-muted rounded-lg">
           <span class="text-sm text-muted-foreground mx-2">Andere Jahre:</span>
           {availableYears.filter(year => year !== activeYear).map((year) => (
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
+            <a
+              class={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              href={`/projekte/${year}`}
             >
-              <a href={`/projekte/${year}`}>{year}</a>
-            </Button>
+              {year}
+            </a>
           ))}
         </div>
       </div>

@@ -1,28 +1,18 @@
 import type { APIRoute } from "astro";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import puppeteer from "puppeteer";
-import { getProjectUrl } from "~/lib/projects";
+import {
+  getProjectUrl,
+  getAvailableYears,
+  getParticipants,
+  getProjects,
+} from "~/lib/projects";
 
 export const GET: APIRoute = async ({ params, redirect }) => {
+  "use cache";
   const { year, username, project } = params;
 
   if (!year || !username || !project) {
     return redirect("/logo.png", 302);
-  }
-
-  // Check if we have a custom preview image in the public/screenshots directory
-  const screenshotPath = join(
-    process.cwd(),
-    "public",
-    "screenshots",
-    year.toString(),
-    username,
-    `${project}.png`,
-  );
-
-  if (existsSync(screenshotPath)) {
-    return redirect(`/screenshots/${year}/${username}/${project}.png`, 302);
   }
 
   let browser;
@@ -76,7 +66,28 @@ export const GET: APIRoute = async ({ params, redirect }) => {
 };
 
 export function getStaticPaths() {
-  // We can't pre-generate all possible preview paths
-  // This will be handled dynamically
-  return [];
+  // Generate paths from projects.json for better build-time optimization
+  const paths: Array<{
+    params: { year: string; username: string; project: string };
+  }> = [];
+
+  const years = getAvailableYears();
+
+  years.forEach((year) => {
+    const participants = getParticipants(year);
+    participants.forEach(({ username }) => {
+      const projects = getProjects(year, username);
+      projects.forEach(({ projectName }) => {
+        paths.push({
+          params: {
+            year: year.toString(),
+            username,
+            project: projectName,
+          },
+        });
+      });
+    });
+  });
+
+  return paths;
 }

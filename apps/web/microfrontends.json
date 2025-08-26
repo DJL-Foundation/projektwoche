@@ -17,6 +17,7 @@
             "/projekte/:path*",
             "/@vite/client/:path*",
             "/_astro/:path*",
+            "/api/preview/:path*",
             "/.well-known/appspecific/com.chrome.devtools.json",
             "/sitemap-index.xml",
             "/sitemap-:path.xml"

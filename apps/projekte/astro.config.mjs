@@ -77,6 +77,7 @@ export default defineConfig({
       tailwindcss(),
       // @ts-ignore
       devtoolsJson(),
+      // @ts-ignore
       tsconfigPaths(),
     ],
   },
