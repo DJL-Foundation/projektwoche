@@ -21,48 +21,37 @@ const workshopMeta = workshopYear?.['!'];
   <div class="container mx-auto px-4 py-8">
     <!-- Year Navigation - Top -->
     <div class="mb-8">
+      <!-- Main Header with Year and Meta Info -->
       <div class="text-center mb-6">
-        <h1 class="ledger-regular text-4xl md:text-6xl font-bold mb-4">
-          Projektwoche Projekte
+      <div class="flex items-center justify-center gap-4 mb-4">
+        <h1 class="ledger-regular text-4xl md:text-6xl font-bold">
+        {workshopMeta?.displayName || `Projektwoche ${activeYear}`}
         </h1>
-        <p class="text-xl md:text-2xl text-muted-foreground mb-6">
-          Entdecke die kreativen Projekte unserer Schüler aus den verschiedenen Projektwochen
-        </p>
+        <Badge variant="default">Aktuell</Badge>
+      </div>
+      <p class="text-xl md:text-2xl text-muted-foreground mb-6">
+        Entdecke die kreativen Projekte unserer Schüler aus den verschiedenen Projektwochen
+      </p>
+      <div class="flex items-center justify-center gap-4 text-sm text-muted-foreground mb-6">
+        <span>{allProjects.length} Projekte</span>
+        <span>{new Set(allProjects.map(p => p.username)).size} Teilnehmer</span>
+      </div>
       </div>
       
       <!-- Year Selection -->
       <div class="flex justify-center mb-8">
-        <div class="flex items-center gap-2 p-1 bg-muted rounded-lg">
-          <span class="text-sm text-muted-foreground mx-2">Jahr:</span>
-          {availableYears.map((year) => (
-            <Button
-              variant={year === activeYear ? "default" : "ghost"}
-              size="sm"
-              onclick={year === activeYear ? undefined : `window.location.href='/projekte/${year}'`}
-            >
-              {year}
-            </Button>
-          ))}
-        </div>
+      <div class="flex items-center gap-2 p-1 bg-muted rounded-lg">
+        <span class="text-sm text-muted-foreground mx-2">Jahr:</span>
+        {availableYears.map((year) => (
+        <Button
+          variant={year === activeYear ? "default" : "ghost"}
+          size="sm"
+          onClick={year === activeYear ? undefined : () => window.location.href = `/projekte/${year}`}
+        >
+          {year}
+        </Button>
+        ))}
       </div>
-    </div>
-
-    <!-- Current Year Header -->
-    <div class="mb-8 text-center">
-      <div class="flex items-center justify-center gap-4 mb-4">
-        <h2 class="text-2xl md:text-3xl font-bold">
-          Projektwoche {activeYear}
-        </h2>
-        <Badge variant="default">Aktuell</Badge>
-      </div>
-      {workshopMeta && (
-        <p class="text-lg text-muted-foreground mb-4">
-          {workshopMeta.displayName}
-        </p>
-      )}
-      <div class="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-        <span>{allProjects.length} Projekte</span>
-        <span>{new Set(allProjects.map(p => p.username)).size} Teilnehmer</span>
       </div>
     </div>
 
@@ -79,7 +68,6 @@ const workshopMeta = workshopYear?.['!'];
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {sortedProjects.map(({ username, displayName, projectName, project }) => (
             <ProjectCard
-              key={`${username}-${projectName}`}
               username={username}
               displayName={displayName}
               projectName={projectName}
@@ -102,9 +90,9 @@ const workshopMeta = workshopYear?.['!'];
             <Button
               variant="ghost"
               size="sm"
-              onclick={`window.location.href='/projekte/${year}'`}
+              asChild
             >
-              {year}
+              <a href={`/projekte/${year}`}>{year}</a>
             </Button>
           ))}
         </div>

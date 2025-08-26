@@ -62,14 +62,13 @@ if (!participantData) {
           {projects.map(({ projectName, project }) => {
             return (
               <ProjectCard
-                key={projectName}
                 username={participant as string}
                 displayName={participantData.displayName}
                 projectName={projectName}
                 project={project}
                 year={activeYear}
                 previewImageUrl={getPreviewImageUrl(activeYear, participant as string, projectName)}
-                size="large"
+                size="compact"
               />
             );
           })}
@@ -81,13 +80,13 @@ if (!participantData) {
     <div class="mt-12 pt-8 border-t border-border flex justify-between">
       <Button
         variant="outline"
-        onclick="window.location.href='/projekte'"
+        onClick={() => window.location.href='/projekte'}
       >
         ← Alle Projekte
       </Button>
       <Button
         variant="outline"
-        onclick={`window.location.href='/projekte/${activeYear}'`}
+        onClick={() => window.location.href=`/projekte/${activeYear}`}
       >
         Alle Projekte {activeYear}
       </Button>

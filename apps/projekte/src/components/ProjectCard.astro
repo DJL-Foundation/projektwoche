@@ -1,7 +1,8 @@
 ---
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "prowo-ui/ui/card";
 import { Badge } from "prowo-ui/ui/badge";
-import { Button } from "prowo-ui/ui/button";
+import { buttonVariants } from "prowo-ui/ui/button";
+import { cn } from "prowo-ui/lib/utils"
 import type { Project } from "../types/projects";
 
 export interface Props {
@@ -72,7 +73,7 @@ const isCompact = size === 'compact';
       <div class={`flex flex-wrap gap-1 ${isCompact ? 'mt-1' : 'mt-2'}`}>
         {project.tags.slice(0, isCompact ? 2 : undefined).map((tag) => {
           return (
-            <Badge key={tag} variant="outline" className={`text-xs ${isCompact ? 'text-xs px-1 py-0' : ''}`}>
+            <Badge variant="outline" className={`text-xs ${isCompact ? 'text-xs px-1 py-0' : ''}`}>
               {tag}
             </Badge>
           );
@@ -88,26 +89,23 @@ const isCompact = size === 'compact';
   
   <CardFooter className={`${isCompact ? 'pt-1' : 'pt-2'}`}>
     <div class={`flex gap-1 w-full ${isCompact ? 'flex-col gap-1' : 'gap-2'}`}>
-      <Button 
-        variant="default" 
-        size="sm" 
-        className={`flex-1 ${isCompact ? 'text-xs px-2 py-1' : ''}`}
-        onclick={`window.location.href='${projectUrl}'`}
+      <a 
+        class={cn(buttonVariants({variant: 'default', size: 'sm'}), `flex-1 ${isCompact ? 'text-xs px-2 py-1' : ''}`)}
       >
-        {isCompact ? "Ansehen" : "Projekt ansehen"}
-      </Button>
+        <a href={projectUrl}>
+          {isCompact ? "Ansehen" : "Projekt ansehen"}
+        </a>
+      </a>
       {project.url && (
-        <Button 
-          variant="outline" 
-          size="sm"
-          onclick={`window.open('${project.url}', '_blank')`}
-          className={`${isCompact ? 'flex-1 text-xs px-2 py-1' : ''}`}
+        <a
+          class={cn(buttonVariants({variant: 'outline', size: 'sm'}), `${isCompact ? 'flex-1 text-xs px-2 py-1' : ''}`)}
+          href={project.url} target="_blank" rel="noopener noreferrer"
         >
           <svg class={`w-3 h-3 ${isCompact ? '' : 'w-4 h-4 mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
           {isCompact ? "" : "Extern"}
-        </Button>
+          </a>
       )}
     </div>
   </CardFooter>

@@ -6,54 +6,38 @@ import { ThemeToggle } from "../theme-toggle";
 import { motion, MotionConfig } from "motion/react";
 import { Button } from "../ui/button";
 import { ArrowLeft } from "lucide-react";
+import projectsData from "../../../../projects.json";
 
 interface ProjectsData {
   activeYear: number;
-  workshops: Record<string, {
-    '!'?: { displayName: string; site?: string };
-    [username: string]: unknown;
-  }>;
-}
-
-interface HeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  beta?: boolean; // Shows beta string
-  print?: boolean; // Print Styles and Full Text
-}
-
-async function fetchProjectsData(): Promise<ProjectsData | null> {
-  try {
-    const response = await fetch('/api/projekte/data', {
-      headers: {
-        'authorization': 'prowo-will-implement-security'
-      }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch projects data:', response.status);
-      return null;
+  workshops: Record<
+    string,
+    {
+      "!"?: { displayName: string; site?: string };
+      [username: string]: unknown;
     }
-    
-    return await response.json() as ProjectsData;
-  } catch (error) {
-    console.error('Error fetching projects data:', error);
-    return null;
-  }
-}
-
-function getLatestWorkshops(data: ProjectsData, count = 3): Array<{ year: number; displayName: string }> {
-  const years = Object.keys(data.workshops)
-    .map(year => parseInt(year, 10))
-    .sort((a, b) => b - a);
-  
-  return years.slice(0, count).map(year => ({
-    year,
-    displayName: data.workshops[year.toString()]?.['!']?.displayName ?? `Projektwoche ${year}`
-  }));
+  >;
 }
 
 interface HeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   beta?: boolean; // Shows beta string
   print?: boolean; // Print Styles and Full Text
+}
+
+function getLatestWorkshops(
+  data: ProjectsData,
+  count = 3,
+): Array<{ year: number; displayName: string }> {
+  const years = Object.keys(data.workshops)
+    .map((year) => parseInt(year, 10))
+    .sort((a, b) => b - a);
+
+  return years.slice(0, count).map((year) => ({
+    year,
+    displayName:
+      data.workshops[year.toString()]?.["!"]?.displayName ??
+      `Projektwoche ${year}`,
+  }));
 }
 
 export default function Header({
@@ -61,22 +45,20 @@ export default function Header({
   print = false,
   ...props
 }: HeaderProps) {
-  const [projectsData, setProjectsData] = useState<ProjectsData | null>(null);
-  const [latestWorkshops, setLatestWorkshops] = useState<Array<{ year: number; displayName: string }>>([]);
+  const [latestWorkshops, setLatestWorkshops] = useState<
+    Array<{ year: number; displayName: string }>
+  >([]);
 
   useEffect(() => {
-    void fetchProjectsData().then(data => {
-      if (data) {
-        setProjectsData(data);
-        setLatestWorkshops(getLatestWorkshops(data, 3));
-      }
-    });
+    // Use the imported data directly instead of fetching
+    const data = projectsData as ProjectsData;
+    setLatestWorkshops(getLatestWorkshops(data, 3));
   }, []);
 
   return (
     <MotionConfig reducedMotion={print ? "always" : "user"}>
       <motion.header
-        className={`bg-background ${print ? "border-b-2" : "border-b border-border"}`}
+        className={`bg-background ${print ? "border-b-2" : "border-border border-b"}`}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -85,15 +67,15 @@ export default function Header({
             <div className="grid grid-cols-3 items-center">
               {/* Left section - Hackclub Stade button */}
               <div className="flex items-center space-x-4">
-                <Button 
-                  variant="ghost" 
-                  asChild 
+                <Button
+                  variant="ghost"
+                  asChild
                   disabled
                   className="cursor-not-allowed"
                 >
-                  <a 
-                    href="https://hackclub-stade.de" 
-                    target="_blank" 
+                  <a
+                    href="https://hackclub-stade.de"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"
                   >
@@ -106,7 +88,7 @@ export default function Header({
               {/* Center section - Logo and title */}
               <div className="flex justify-center">
                 <Link href="/" className="flex items-center space-x-2" prefetch>
-                  <div className="relative w-10 h-10">
+                  <div className="relative h-10 w-10">
                     <Image
                       src={"/logo.png"}
                       alt="Hackclub Stade Logo"
@@ -124,17 +106,19 @@ export default function Header({
               </div>
 
               {/* Right section - Workshop navigation */}
-              <div className="flex justify-end items-center space-x-2">
+              <div className="flex items-center justify-end space-x-2">
                 {latestWorkshops.map(({ year, displayName: _displayName }) => (
                   <Button
                     key={year}
-                    variant={year === projectsData?.activeYear ? "default" : "outline"}
+                    variant={
+                      year === (projectsData as ProjectsData).activeYear
+                        ? "default"
+                        : "outline"
+                    }
                     asChild
                     size="sm"
                   >
-                    <Link href={`/projekte/${year}`}>
-                      {year}
-                    </Link>
+                    <Link href={`/projekte/${year}`}>{year}</Link>
                   </Button>
                 ))}
                 <ThemeToggle />
@@ -145,7 +129,7 @@ export default function Header({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Link href="/" className="flex items-center space-x-2" prefetch>
-                  <div className="relative w-10 h-10">
+                  <div className="relative h-10 w-10">
                     <Image
                       src={"/logo.png"}
                       alt="Hackclub Stade Logo"
