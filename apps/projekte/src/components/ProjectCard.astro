@@ -1,0 +1,106 @@
+---
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "prowo-ui/ui/card";
+import { Badge } from "prowo-ui/ui/badge";
+import { Button } from "prowo-ui/ui/button";
+import type { Project } from "../types/projects";
+
+export interface Props {
+  username: string;
+  displayName: string;
+  projectName: string;
+  project: Project;
+  year: number;
+  previewImageUrl?: string;
+  size?: 'normal' | 'large';
+}
+
+const { 
+  username, 
+  displayName, 
+  projectName, 
+  project, 
+  year, 
+  previewImageUrl,
+  size = 'normal' 
+} = Astro.props;
+
+const projectUrl = `/projekte/${year}/${username}/${projectName}`;
+const isLarge = size === 'large';
+---
+
+<Card className={`group hover:shadow-lg transition-all duration-200 ${isLarge ? 'lg:col-span-2' : ''}`}>
+  <CardHeader className="pb-2">
+    <div class="flex items-start justify-between">
+      <div class="flex-1">
+        <CardTitle className={`${isLarge ? 'text-xl' : 'text-lg'} mb-1`}>
+          {project.name}
+        </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground">
+          von {displayName} • {year}
+        </CardDescription>
+      </div>
+      {project.status && (
+        <Badge variant={project.status === 'completed' ? 'default' : 'secondary'}>
+          {project.status}
+        </Badge>
+      )}
+    </div>
+  </CardHeader>
+  
+  <CardContent className="pb-2">
+    {previewImageUrl && (
+      <div class={`mb-3 rounded-md overflow-hidden bg-muted ${isLarge ? 'aspect-video' : 'aspect-[4/3]'}`}>
+        <img 
+          src={previewImageUrl} 
+          alt={`Preview von ${project.name}`}
+          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          loading="lazy"
+          onerror="this.src='/logo.png'; this.alt='Kein Preview verfügbar'"
+        />
+      </div>
+    )}
+    
+    {project.description && (
+      <p class={`text-sm text-muted-foreground ${isLarge ? 'text-base' : ''}`}>
+        {project.description}
+      </p>
+    )}
+    
+    {project.tags && project.tags.length > 0 && (
+      <div class="flex flex-wrap gap-1 mt-2">
+        {project.tags.map((tag) => {
+          return (
+            <Badge key={tag} variant="outline" className="text-xs">
+              {tag}
+            </Badge>
+          );
+        })}
+      </div>
+    )}
+  </CardContent>
+  
+  <CardFooter className="pt-2">
+    <div class="flex gap-2 w-full">
+      <Button 
+        variant="default" 
+        size="sm" 
+        className="flex-1"
+        onclick={`window.location.href='${projectUrl}'`}
+      >
+        Projekt ansehen
+      </Button>
+      {project.url && (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onclick={`window.open('${project.url}', '_blank')`}
+        >
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+          Extern
+        </Button>
+      )}
+    </div>
+  </CardFooter>
+</Card>

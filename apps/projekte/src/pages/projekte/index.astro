@@ -1,14 +1,103 @@
 ---
 import Layout from "~/layouts/Layout.astro";
+import { Button } from "prowo-ui/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "prowo-ui/ui/card";
+import { Badge } from "prowo-ui/ui/badge";
+import { getAvailableYears, getActiveYear, getAllProjectsForYear } from "~/lib/projects";
+
+const availableYears = getAvailableYears();
+const activeYear = getActiveYear();
+
+// Get stats for each year
+const yearStats = availableYears.map(year => ({
+  year,
+  projectCount: getAllProjectsForYear(year).length,
+  isActive: year === activeYear
+}));
 ---
 
 <Layout>
-  <div class="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-4 px-4">
-    <h1 class="ledger-regular text-4xl md:text-6xl font-bold">
-      Moin! Sie befinden sich aktuell im Microfrontend zum Hosten der Projekte von unseren Schülern.
-    </h1>
-    <h3 class="geist-500 text-xl md:text-2xl">
-      Diese Seite wird in Zukunft mit einer Liste bestückt werden.
-    </h3>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+      <h1 class="ledger-regular text-4xl md:text-6xl font-bold mb-4">
+        Projektwoche Projekte
+      </h1>
+      <p class="text-xl md:text-2xl text-muted-foreground mb-6">
+        Entdecke die kreativen Projekte unserer Schüler aus den verschiedenen Projektwochen
+      </p>
+      <div class="flex justify-center">
+        <Button
+          size="lg"
+          onclick={`window.location.href='/projekte/${activeYear}'`}
+        >
+          Aktuelle Projekte {activeYear} ansehen
+        </Button>
+      </div>
+    </div>
+
+    <!-- Years Overview -->
+    {availableYears.length > 0 && (
+      <div class="mb-8">
+        <h2 class="text-2xl font-semibold mb-6 text-center">Verfügbare Jahrgänge</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {yearStats.map(({ year, projectCount, isActive }) => {
+            return (
+              <Card key={year} className="group hover:shadow-lg transition-all duration-200 cursor-pointer"
+                    onclick={`window.location.href='/projekte/${year}'`}>
+                <CardHeader>
+                  <div class="flex items-center justify-between">
+                    <CardTitle className="text-xl">
+                      Projektwoche {year}
+                    </CardTitle>
+                    {isActive && (
+                      <Badge variant="default">Aktuell</Badge>
+                    )}
+                  </div>
+                  <CardDescription>
+                    {projectCount} {projectCount === 1 ? 'Projekt' : 'Projekte'} verfügbar
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-muted-foreground">
+                      Klicken zum Durchstöbern
+                    </span>
+                    <svg class="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" 
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    )}
+
+    <!-- Quick Actions -->
+    <div class="text-center pt-8 border-t border-border">
+      <h3 class="text-lg font-semibold mb-4">Schnellzugriff</h3>
+      <div class="flex flex-wrap justify-center gap-3">
+        {availableYears.slice(0, 3).map(year => {
+          return (
+            <Button
+              key={year}
+              variant="outline"
+              onclick={`window.location.href='/projekte/${year}'`}
+            >
+              Projekte {year}
+            </Button>
+          );
+        })}
+        <Button
+          variant="outline"
+          onclick="window.location.href='/'"
+        >
+          Zurück zur Hauptseite
+        </Button>
+      </div>
+    </div>
   </div>
 </Layout>

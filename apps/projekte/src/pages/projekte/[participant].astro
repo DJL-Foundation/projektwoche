@@ -1,0 +1,93 @@
+---
+import Layout from "~/layouts/Layout.astro";
+import ProjectCard from "~/components/ProjectCard.astro";
+import { Button } from "prowo-ui/ui/button";
+import { getActiveYear, getParticipant, getProjects, getPreviewImageUrl, getParticipants } from "~/lib/projects";
+
+export async function getStaticPaths() {
+  const activeYear = getActiveYear();
+  const participants = getParticipants(activeYear);
+  
+  return participants.map(({ username }) => ({
+    params: { participant: username }
+  }));
+}
+
+const { participant } = Astro.params;
+const activeYear = getActiveYear();
+
+const participantData = getParticipant(activeYear, participant as string);
+const projects = getProjects(activeYear, participant as string);
+
+if (!participantData) {
+  return Astro.redirect('/projekte');
+}
+---
+
+<Layout>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h1 class="ledger-regular text-3xl md:text-4xl font-bold mb-2">
+            {participantData.displayName}
+          </h1>
+          <p class="text-lg text-muted-foreground">
+            @{participant} • Projektwoche {activeYear}
+          </p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4 text-sm text-muted-foreground">
+        <span>{projects.length} {projects.length === 1 ? 'Projekt' : 'Projekte'}</span>
+        <span>Aktuelles Jahr: {activeYear}</span>
+      </div>
+    </div>
+
+    {projects.length === 0 ? (
+      <div class="text-center py-12">
+        <h2 class="text-xl font-semibold mb-2">Noch keine Projekte</h2>
+        <p class="text-muted-foreground">
+          {participantData.displayName} hat noch keine Projekte hochgeladen.
+        </p>
+      </div>
+    ) : (
+      <>
+        {/* Projects Grid */}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {projects.map(({ projectName, project }) => {
+            return (
+              <ProjectCard
+                key={projectName}
+                username={participant as string}
+                displayName={participantData.displayName}
+                projectName={projectName}
+                project={project}
+                year={activeYear}
+                previewImageUrl={getPreviewImageUrl(activeYear, participant as string, projectName)}
+                size="large"
+              />
+            );
+          })}
+        </div>
+      </>
+    )}
+
+    <!-- Navigation -->
+    <div class="mt-12 pt-8 border-t border-border flex justify-between">
+      <Button
+        variant="outline"
+        onclick="window.location.href='/projekte'"
+      >
+        ← Alle Projekte
+      </Button>
+      <Button
+        variant="outline"
+        onclick={`window.location.href='/projekte/${activeYear}'`}
+      >
+        Alle Projekte {activeYear}
+      </Button>
+    </div>
+  </div>
+</Layout>
