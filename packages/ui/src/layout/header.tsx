@@ -1,13 +1,43 @@
 import type React from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "../theme-toggle";
 import { motion, MotionConfig } from "motion/react";
 import { Button } from "../ui/button";
+import { ArrowLeft } from "lucide-react";
+import projectsData from "../../../../projects.json";
+
+interface ProjectsData {
+  activeYear: number;
+  workshops: Record<
+    string,
+    {
+      "!"?: { displayName: string; site?: string };
+      [username: string]: unknown;
+    }
+  >;
+}
 
 interface HeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   beta?: boolean; // Shows beta string
   print?: boolean; // Print Styles and Full Text
+}
+
+function getLatestWorkshops(
+  data: ProjectsData,
+  count = 3,
+): Array<{ year: number; displayName: string }> {
+  const years = Object.keys(data.workshops)
+    .map((year) => parseInt(year, 10))
+    .sort((a, b) => b - a);
+
+  return years.slice(0, count).map((year) => ({
+    year,
+    displayName:
+      data.workshops[year.toString()]?.["!"]?.displayName ??
+      `Projektwoche ${year}`,
+  }));
 }
 
 export default function Header({
@@ -15,20 +45,50 @@ export default function Header({
   print = false,
   ...props
 }: HeaderProps) {
+  const [latestWorkshops, setLatestWorkshops] = useState<
+    Array<{ year: number; displayName: string }>
+  >([]);
+
+  useEffect(() => {
+    // Use the imported data directly instead of fetching
+    const data = projectsData as ProjectsData;
+    setLatestWorkshops(getLatestWorkshops(data, 3));
+  }, []);
+
   return (
     <MotionConfig reducedMotion={print ? "always" : "user"}>
       <motion.header
-        className={`bg-background ${print ? "border-b-2" : "border-b border-border"}`}
+        className={`bg-background ${print ? "border-b-2" : "border-border border-b"}`}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="container mx-auto px-4 py-4" {...props}>
           {!print ? (
             <div className="grid grid-cols-3 items-center">
-              {/* Left section - Logo and title */}
+              {/* Left section - Hackclub Stade button */}
               <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  asChild
+                  disabled
+                  className="cursor-not-allowed"
+                >
+                  <a
+                    href="https://hackclub-stade.de"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Hackclub Stade
+                  </a>
+                </Button>
+              </div>
+
+              {/* Center section - Logo and title */}
+              <div className="flex justify-center">
                 <Link href="/" className="flex items-center space-x-2" prefetch>
-                  <div className="relative w-10 h-10">
+                  <div className="relative h-10 w-10">
                     <Image
                       src={"/logo.png"}
                       alt="Hackclub Stade Logo"
@@ -45,17 +105,22 @@ export default function Header({
                 </Link>
               </div>
 
-              {/* Center section - Projekte button */}
-              <div className="flex justify-center">
-                <Button variant="outline" asChild>
-                  <Link href="/projekte" className="flex items-center gap-2">
-                    Projekte
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Right section - Theme toggle */}
-              <div className="flex justify-end">
+              {/* Right section - Workshop navigation */}
+              <div className="flex items-center justify-end space-x-2">
+                {latestWorkshops.map(({ year, displayName: _displayName }) => (
+                  <Button
+                    key={year}
+                    variant={
+                      year === (projectsData as ProjectsData).activeYear
+                        ? "default"
+                        : "outline"
+                    }
+                    asChild
+                    size="sm"
+                  >
+                    <Link href={`/projekte/${year}`}>{year}</Link>
+                  </Button>
+                ))}
                 <ThemeToggle />
               </div>
             </div>
@@ -64,7 +129,7 @@ export default function Header({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Link href="/" className="flex items-center space-x-2" prefetch>
-                  <div className="relative w-10 h-10">
+                  <div className="relative h-10 w-10">
                     <Image
                       src={"/logo.png"}
                       alt="Hackclub Stade Logo"

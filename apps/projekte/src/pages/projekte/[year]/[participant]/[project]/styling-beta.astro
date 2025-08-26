@@ -1,0 +1,65 @@
+---
+import { getProject, getProjectUrl, getAvailableYears, getParticipants, getProjects } from "~/lib/projects";
+import Layout from "~/layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const years = getAvailableYears();
+  const paths: Array<{ params: { year: string; participant: string; project: string } }> = [];
+  
+  years.forEach(year => {
+    const participants = getParticipants(year);
+    participants.forEach(({ username }) => {
+      const projects = getProjects(year, username);
+      projects.forEach(({ projectName }) => {
+        paths.push({
+          params: { 
+            year: year.toString(), 
+            participant: username, 
+            project: projectName 
+          }
+        });
+      });
+    });
+  });
+  
+  return paths;
+}
+
+const { year, participant, project } = Astro.params;
+const yearNum = parseInt(year as string, 10);
+
+const projectData = getProject(yearNum, participant as string, project as string);
+
+if (!projectData) {
+  return Astro.redirect('/projekte');
+}
+
+const projectUrl = getProjectUrl(yearNum, participant as string, project as string);
+---
+
+<Layout>
+  <div class="w-full h-screen flex flex-col">
+    <!-- Project Content in iframe -->
+    <div class="flex-1 w-full">
+      <iframe 
+        src={projectUrl}
+        title={`${projectData.name} - ${participant}`}
+        class="w-full h-full border-none"
+        loading="lazy"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+      ></iframe>
+    </div>
+  </div>
+
+  <style>
+    body {
+      overflow: hidden;
+    }
+    
+    main {
+      min-height: 100vh !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+  </style>
+</Layout>

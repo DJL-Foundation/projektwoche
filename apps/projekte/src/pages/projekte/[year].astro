@@ -1,0 +1,104 @@
+---
+import Layout from "~/layouts/Layout.astro";
+import ProjectCard from "~/components/ProjectCard.astro";
+import { Badge } from "prowo-ui/ui/badge";
+import { buttonVariants } from "prowo-ui/ui/button";
+import { cn } from "prowo-ui/lib/utils"
+import { getAllProjectsForYear, getWorkshopYear, getAvailableYears, getPreviewImageUrl } from "~/lib/projects";
+
+export async function getStaticPaths() {
+  const years = getAvailableYears();
+  return years.map(year => ({
+    params: { year: year.toString() }
+  }));
+}
+
+const { year } = Astro.params;
+const yearNum = parseInt(year as string, 10);
+
+const workshopYear = getWorkshopYear(yearNum);
+const allProjects = getAllProjectsForYear(yearNum);
+const availableYears = getAvailableYears();
+
+if (!workshopYear) {
+  return Astro.redirect('/projekte');
+}
+
+// Sort projects alphabetically by project name
+const sortedProjects = allProjects.sort((a, b) => a.project.name.localeCompare(b.project.name));
+
+const workshopMeta = workshopYear['!'];
+---
+
+<Layout>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h1 class="ledger-regular text-3xl md:text-4xl font-bold mb-2">
+            Projektwoche {yearNum}
+          </h1>
+          {workshopMeta && (
+            <p class="text-lg text-muted-foreground">
+              {workshopMeta.displayName}
+            </p>
+          )}
+        </div>
+        
+        <!-- Year Navigation -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-muted-foreground mr-2">Jahre:</span>
+          {availableYears.map((availableYear) => (
+            <a
+              class={cn(buttonVariants({ variant: availableYear === yearNum ? "default" : "outline", size: "sm" }))}
+              href={`/projekte/${availableYear}`}
+            >
+              {availableYear}
+            </a>
+          ))}
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4 text-sm text-muted-foreground">
+        <span>{allProjects.length} Projekte</span>
+        <span>{new Set(allProjects.map(p => p.username)).size} Teilnehmer</span>
+      </div>
+    </div>
+
+    {allProjects.length === 0 ? (
+      <div class="text-center py-12">
+        <h2 class="text-xl font-semibold mb-2">Noch keine Projekte</h2>
+        <p class="text-muted-foreground">
+          Für das Jahr {yearNum} wurden noch keine Projekte hochgeladen.
+        </p>
+      </div>
+    ) : (
+      <>
+        {/* All Projects Grid - sorted alphabetically */}
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {sortedProjects.map(({ username, displayName, projectName, project }) => (
+            <ProjectCard
+              username={username}
+              displayName={displayName}
+              projectName={projectName}
+              project={project}
+              year={yearNum}
+              previewImageUrl={getPreviewImageUrl(yearNum, username, projectName)}
+            />
+          ))}
+        </div>
+      </>
+    )}
+
+    <!-- Back Navigation -->
+    <div class="mt-12 pt-8 border-t border-border">
+      <a
+        class={cn(buttonVariants({ variant: "outline" }))}
+        href="/projekte"
+      >
+        ← Zurück zur Übersicht
+      </a>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,35 @@
+---
+import { getActiveYear, getProject, getParticipants, getProjects } from "~/lib/projects";
+
+export async function getStaticPaths() {
+  const activeYear = getActiveYear();
+  const participants = getParticipants(activeYear);
+  const paths: Array<{ params: { participant: string; project: string } }> = [];
+  
+  participants.forEach(({ username }) => {
+    const projects = getProjects(activeYear, username);
+    projects.forEach(({ projectName }) => {
+      paths.push({
+        params: { 
+          participant: username, 
+          project: projectName 
+        }
+      });
+    });
+  });
+  
+  return paths;
+}
+
+const { participant, project } = Astro.params;
+const activeYear = getActiveYear();
+
+const projectData = getProject(activeYear, participant as string, project as string);
+
+if (!projectData) {
+  return Astro.redirect('/projekte');
+}
+
+// Redirect to the current year version
+return Astro.redirect(`/projekte/${activeYear}/${participant}/${project}`);
+---

@@ -20,6 +20,7 @@
     "@astrojs/vercel": "^8.2.5",
     "@tailwindcss/vite": "^4.1.11",
     "@vercel/microfrontends": "^2.0.0",
+    "@vercel/og": "^0.8.5",
     "@vercel/toolbar": "^0.1.38",
     "astro": "^5.12.9",
     "prowo-ui": "workspace:*",
