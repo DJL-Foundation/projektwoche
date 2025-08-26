@@ -91,3 +91,13 @@ export function getPreviewImageUrl(year: number, username: string, projectName: 
   // Use API route for dynamic screenshot generation with fallback
   return `/api/preview/${year}/${username}/${projectName}`;
 }
+
+export function getLatestWorkshops(count: number = 3): Array<{ year: number; displayName: string }> {
+  const data = getProjectsData();
+  const years = getAvailableYears(); // Already sorted newest first
+  
+  return years.slice(0, count).map(year => ({
+    year,
+    displayName: data.workshops[year.toString()]?.['!']?.displayName || `Projektwoche ${year}`
+  }));
+}

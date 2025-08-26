@@ -23,20 +23,8 @@ if (!workshopYear) {
   return Astro.redirect('/projekte');
 }
 
-// Group projects by participant
-const projectsByParticipant = allProjects.reduce((acc, item) => {
-  if (!acc[item.username]) {
-    acc[item.username] = {
-      displayName: item.displayName,
-      projects: []
-    };
-  }
-  acc[item.username].projects.push({
-    projectName: item.projectName,
-    project: item.project
-  });
-  return acc;
-}, {} as Record<string, { displayName: string; projects: Array<{ projectName: string; project: any }> }>);
+// Sort projects alphabetically by project name
+const sortedProjects = allProjects.sort((a, b) => a.project.name.localeCompare(b.project.name));
 
 const workshopMeta = workshopYear['!'];
 ---
@@ -74,7 +62,7 @@ const workshopMeta = workshopYear['!'];
       
       <div class="flex items-center gap-4 text-sm text-muted-foreground">
         <span>{allProjects.length} Projekte</span>
-        <span>{Object.keys(projectsByParticipant).length} Teilnehmer</span>
+        <span>{new Set(allProjects.map(p => p.username)).size} Teilnehmer</span>
       </div>
     </div>
 
@@ -87,46 +75,20 @@ const workshopMeta = workshopYear['!'];
       </div>
     ) : (
       <>
-        {/* Projects grouped by participant */}
-        <div class="space-y-12">
-          {Object.entries(projectsByParticipant).map(([username, participantData]) => {
-            return (
-              <section key={username}>
-                <div class="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 class="text-2xl font-semibold mb-1">
-                      {participantData.displayName}
-                    </h2>
-                    <p class="text-muted-foreground">
-                      @{username} • {participantData.projects.length} {participantData.projects.length === 1 ? 'Projekt' : 'Projekte'}
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onclick={`window.location.href='/projekte/${yearNum}/${username}'`}
-                  >
-                    Alle von {participantData.displayName}
-                  </Button>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {participantData.projects.map(({ projectName, project }) => (
-                    <ProjectCard
-                      key={`${username}-${projectName}`}
-                      username={username}
-                      displayName={participantData.displayName}
-                      projectName={projectName}
-                      project={project}
-                      year={yearNum}
-                      previewImageUrl={getPreviewImageUrl(yearNum, username, projectName)}
-                      size="compact"
-                    />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+        {/* All Projects Grid - sorted alphabetically */}
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {sortedProjects.map(({ username, displayName, projectName, project }) => (
+            <ProjectCard
+              key={`${username}-${projectName}`}
+              username={username}
+              displayName={displayName}
+              projectName={projectName}
+              project={project}
+              year={yearNum}
+              previewImageUrl={getPreviewImageUrl(yearNum, username, projectName)}
+              size="compact"
+            />
+          ))}
         </div>
       </>
     )}

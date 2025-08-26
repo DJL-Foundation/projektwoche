@@ -18,6 +18,7 @@ const activeYear = getActiveYear();
 
 const participantData = getParticipant(activeYear, participant as string);
 const projects = getProjects(activeYear, participant as string);
+const workshopMeta = getWorkshopYear(activeYear)?.['!'];
 
 if (!participantData) {
   return Astro.redirect('/projekte');
@@ -31,11 +32,13 @@ if (!participantData) {
       <div class="flex items-center justify-between mb-4">
         <div>
           <h1 class="ledger-regular text-3xl md:text-4xl font-bold mb-2">
-            {participantData.displayName}
+            Projekte by {participantData.displayName}
           </h1>
-          <p class="text-lg text-muted-foreground">
-            @{participant} • Projektwoche {activeYear}
-          </p>
+          {workshopMeta && (
+            <p class="text-lg text-muted-foreground">
+              {workshopMeta.displayName}
+            </p>
+          )}
         </div>
       </div>
       

@@ -1,4 +1,6 @@
 ---
+import { getLatestWorkshops, getActiveYear } from "~/lib/projects";
+
 export interface Props {
   beta?: boolean; // Shows beta string
   print?: boolean; // Print Styles and Full Text
@@ -7,34 +9,94 @@ export interface Props {
 }
 
 const { beta = false, print = false, class: className, baseHref, ...props } = Astro.props;
+
+const latestWorkshops = getLatestWorkshops(3);
+const activeYear = getActiveYear();
 ---
 
 <header
   class={`bg-background ${print ? "border-b-2" : "border-b border-border"} ${className || ""}`}
   {...props}
 >
-  <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-    <div class="flex items-center space-x-4">
-      <a href={baseHref || "/"} class="flex items-center space-x-2">
-        <div class="relative w-10 h-10">
-          <img
-            src="/logo.png"
-            alt="Hackclub Stade Logo"
-            class={`w-full h-full object-contain ${print ? "brightness-0" : ""}`}
-          />
+  <div class="container mx-auto px-4 py-4">
+    {!print ? (
+      <div class="grid grid-cols-3 items-center">
+        {/* Left section - Hackclub Stade button */}
+        <div class="flex items-center space-x-4">
+          <a 
+            href="https://hackclub-stade.de" 
+            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-muted text-muted-foreground hover:bg-muted/80 h-10 px-4 py-2 cursor-not-allowed"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+              <path d="m12 19-7-7 7-7"/>
+              <path d="M19 12H5"/>
+            </svg>
+            Hackclub Stade
+          </a>
         </div>
-        <span class="text-xl font-semibold">
-          Hackclub Stade - Projektwoche
-        </span>
-        {beta && (
-          <span class="text-xl font-semibold">&lt;Beta&gt;</span>
-        )}
-        {print && (
-          <span class="text-sm font-medium">
-            by The DJL Foundation
-          </span>
-        )}
-      </a>
-    </div>
+
+        {/* Center section - Logo and title */}
+        <div class="flex items-center justify-center space-x-2">
+          <a href={baseHref || "/"} class="flex items-center space-x-2">
+            <div class="relative w-10 h-10">
+              <img
+                src="/logo.png"
+                alt="Hackclub Stade Logo"
+                class="w-full h-full object-contain"
+              />
+            </div>
+            <span class="text-xl font-semibold">
+              Hackclub Stade - Projektwoche
+            </span>
+            {beta && (
+              <span class="text-xl font-semibold">&lt;Beta&gt;</span>
+            )}
+          </a>
+        </div>
+
+        {/* Right section - Workshop navigation */}
+        <div class="flex justify-end items-center space-x-2">
+          {latestWorkshops.map(({ year, displayName }) => (
+            <a
+              key={year}
+              href={`/projekte/${year}`}
+              class={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 ${
+                year === activeYear 
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                  : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+              }`}
+            >
+              {year}
+            </a>
+          ))}
+        </div>
+      </div>
+    ) : (
+      // Print layout remains the same
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <a href={baseHref || "/"} class="flex items-center space-x-2">
+            <div class="relative w-10 h-10">
+              <img
+                src="/logo.png"
+                alt="Hackclub Stade Logo"
+                class="w-full h-full object-contain brightness-0"
+              />
+            </div>
+            <span class="text-xl font-semibold">
+              Hackclub Stade - Projektwoche
+            </span>
+            {beta && (
+              <span class="text-xl font-semibold">&lt;Beta&gt;</span>
+            )}
+            <span class="text-sm font-medium">
+              by The DJL Foundation
+            </span>
+          </a>
+        </div>
+      </div>
+    )}
   </div>
 </header>
