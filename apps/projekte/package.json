@@ -22,6 +22,7 @@
     "@vercel/microfrontends": "^2.0.0",
     "@vercel/toolbar": "^0.1.38",
     "astro": "^5.12.9",
+    "capture-website": "^4.1.0",
     "prowo-ui": "workspace:*",
     "prowo-wind": "workspace:*",
     "react": "^18.2.0",
