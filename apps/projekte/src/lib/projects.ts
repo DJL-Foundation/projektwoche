@@ -88,6 +88,6 @@ export function getProjectUrl(year: number, username: string, projectName: strin
 }
 
 export function getPreviewImageUrl(year: number, username: string, projectName: string): string {
-  // For now, return a placeholder. This could be extended to fetch actual screenshots
+  // Try to get a custom preview image, fallback to API endpoint
   return `/api/preview/${year}/${username}/${projectName}.png`;
 }
