@@ -11,7 +11,7 @@ interface ProjectsData {
   activeYear: number;
   workshops: Record<string, {
     '!'?: { displayName: string; site?: string };
-    [username: string]: any;
+    [username: string]: unknown;
   }>;
 }
 
@@ -33,21 +33,21 @@ async function fetchProjectsData(): Promise<ProjectsData | null> {
       return null;
     }
     
-    return await response.json();
+    return await response.json() as ProjectsData;
   } catch (error) {
     console.error('Error fetching projects data:', error);
     return null;
   }
 }
 
-function getLatestWorkshops(data: ProjectsData, count: number = 3): Array<{ year: number; displayName: string }> {
+function getLatestWorkshops(data: ProjectsData, count = 3): Array<{ year: number; displayName: string }> {
   const years = Object.keys(data.workshops)
     .map(year => parseInt(year, 10))
     .sort((a, b) => b - a);
   
   return years.slice(0, count).map(year => ({
     year,
-    displayName: data.workshops[year.toString()]?.['!']?.displayName || `Projektwoche ${year}`
+    displayName: data.workshops[year.toString()]?.['!']?.displayName ?? `Projektwoche ${year}`
   }));
 }
 
@@ -65,7 +65,7 @@ export default function Header({
   const [latestWorkshops, setLatestWorkshops] = useState<Array<{ year: number; displayName: string }>>([]);
 
   useEffect(() => {
-    fetchProjectsData().then(data => {
+    void fetchProjectsData().then(data => {
       if (data) {
         setProjectsData(data);
         setLatestWorkshops(getLatestWorkshops(data, 3));
@@ -125,7 +125,7 @@ export default function Header({
 
               {/* Right section - Workshop navigation */}
               <div className="flex justify-end items-center space-x-2">
-                {latestWorkshops.map(({ year, displayName }) => (
+                {latestWorkshops.map(({ year, displayName: _displayName }) => (
                   <Button
                     key={year}
                     variant={year === projectsData?.activeYear ? "default" : "outline"}
