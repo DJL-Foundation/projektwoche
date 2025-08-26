@@ -1,11 +1,11 @@
 import type React from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "../theme-toggle";
 import { motion, MotionConfig } from "motion/react";
 import { Button } from "../ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface ProjectsData {
   activeYear: number;

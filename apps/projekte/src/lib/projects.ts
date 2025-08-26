@@ -39,10 +39,12 @@ export function getProjects(year: number, username: string): Array<{ projectName
   const participant = getParticipant(year, username);
   if (!participant?.projects) return [];
   
-  return Object.entries(participant.projects).map(([projectName, project]) => ({
-    projectName,
-    project
-  }));
+  return Object.entries(participant.projects)
+    .map(([projectName, project]) => ({
+      projectName,
+      project
+    }))
+    .sort((a, b) => a.project.name.localeCompare(b.project.name));
 }
 
 export function getProject(year: number, username: string, projectName: string): Project | undefined {
