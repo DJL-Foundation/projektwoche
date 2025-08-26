@@ -1,7 +1,8 @@
 ---
 import Layout from "~/layouts/Layout.astro";
 import ProjectCard from "~/components/ProjectCard.astro";
-import { Button } from "prowo-ui/ui/button";
+import { buttonVariants } from "prowo-ui/ui/button";
+import { cn } from "prowo-ui/lib/utils"
 import { getActiveYear, getParticipant, getProjects, getPreviewImageUrl, getParticipants, getWorkshopYear } from "~/lib/projects";
 
 export async function getStaticPaths() {
@@ -77,18 +78,18 @@ if (!participantData) {
 
     <!-- Navigation -->
     <div class="mt-12 pt-8 border-t border-border flex justify-between">
-      <Button
-        variant="outline"
-        onClick={() => window.location.href='/projekte'}
+      <a
+        class={cn(buttonVariants({ variant: "outline" }))}
+        href="/projekte"
       >
         ← Alle Projekte
-      </Button>
-      <Button
-        variant="outline"
-        onClick={() => window.location.href=`/projekte/${activeYear}`}
+      </a>
+      <a
+        class={cn(buttonVariants({ variant: "outline" }))}
+        href={`/projekte/${activeYear}`}
       >
         Alle Projekte {activeYear}
-      </Button>
+      </a>
     </div>
   </div>
 </Layout>

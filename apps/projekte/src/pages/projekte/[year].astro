@@ -2,7 +2,8 @@
 import Layout from "~/layouts/Layout.astro";
 import ProjectCard from "~/components/ProjectCard.astro";
 import { Badge } from "prowo-ui/ui/badge";
-import { Button } from "prowo-ui/ui/button";
+import { buttonVariants } from "prowo-ui/ui/button";
+import { cn } from "prowo-ui/lib/utils"
 import { getAllProjectsForYear, getWorkshopYear, getAvailableYears, getPreviewImageUrl } from "~/lib/projects";
 
 export async function getStaticPaths() {
@@ -49,13 +50,12 @@ const workshopMeta = workshopYear['!'];
         <div class="flex items-center gap-2">
           <span class="text-sm text-muted-foreground mr-2">Jahre:</span>
           {availableYears.map((availableYear) => (
-            <Button
-              variant={availableYear === yearNum ? "default" : "outline"}
-              size="sm"
-              onClick={`window.location.href='/projekte/${availableYear}'`}
+            <a
+              class={cn(buttonVariants({ variant: availableYear === yearNum ? "default" : "outline", size: "sm" }))}
+              href={`/projekte/${availableYear}`}
             >
               {availableYear}
-            </Button>
+            </a>
           ))}
         </div>
       </div>
@@ -79,14 +79,12 @@ const workshopMeta = workshopYear['!'];
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {sortedProjects.map(({ username, displayName, projectName, project }) => (
             <ProjectCard
-              key={`${username}-${projectName}`}
               username={username}
               displayName={displayName}
               projectName={projectName}
               project={project}
               year={yearNum}
               previewImageUrl={getPreviewImageUrl(yearNum, username, projectName)}
-              size="compact"
             />
           ))}
         </div>
@@ -95,12 +93,12 @@ const workshopMeta = workshopYear['!'];
 
     <!-- Back Navigation -->
     <div class="mt-12 pt-8 border-t border-border">
-      <Button
-        variant="outline"
-        onclick="window.location.href='/projekte'"
+      <a
+        class={cn(buttonVariants({ variant: "outline" }))}
+        href="/projekte"
       >
         ← Zurück zur Übersicht
-      </Button>
+      </a>
     </div>
   </div>
 </Layout>
