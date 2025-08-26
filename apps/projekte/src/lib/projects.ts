@@ -88,6 +88,6 @@ export function getProjectUrl(year: number, username: string, projectName: strin
 }
 
 export function getPreviewImageUrl(year: number, username: string, projectName: string): string {
-  // Try to get a custom preview image, fallback to API endpoint
-  return `/api/preview/${year}/${username}/${projectName}.png`;
+  // First try direct screenshot path, fallback to API if needed
+  return `/screenshots/${year}/${username}/${projectName}.png`;
 }
