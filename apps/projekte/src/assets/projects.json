@@ -1,0 +1,36 @@
+{
+  "$schema": "./projects.schema.json",
+  "activeYear": 2025,
+  "workshops": {
+    "2025": {
+      "!": {
+        "displayName": "Die Neueröffnung der Athe Projektwoche 2025",
+        "site": "/data/prowo-site/2025.md"
+      },
+      "JULian-11": {
+        "displayName": "Julian",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          }
+        }
+      },
+      "mistermaximi": {
+        "displayName": "Emil",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          }
+        }
+      },
+      "Villaagerr": {
+        "displayName": "Villa",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          }
+        }
+      }
+    }
+  }
+}
