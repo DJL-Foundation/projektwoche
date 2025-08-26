@@ -2,7 +2,7 @@
 import Layout from "~/layouts/Layout.astro";
 import ProjectCard from "~/components/ProjectCard.astro";
 import { Button } from "prowo-ui/ui/button";
-import { getActiveYear, getParticipant, getProjects, getPreviewImageUrl, getParticipants } from "~/lib/projects";
+import { getActiveYear, getParticipant, getProjects, getPreviewImageUrl, getParticipants, getWorkshopYear } from "~/lib/projects";
 
 export async function getStaticPaths() {
   const activeYear = getActiveYear();
