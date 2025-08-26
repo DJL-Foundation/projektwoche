@@ -90,8 +90,8 @@ const isCompact = size === 'compact';
     <div class={`flex gap-1 w-full ${isCompact ? 'flex-col gap-1' : 'gap-2'}`}>
       <Button 
         variant="default" 
-        size={isCompact ? "xs" : "sm"} 
-        className="flex-1"
+        size="sm" 
+        className={`flex-1 ${isCompact ? 'text-xs px-2 py-1' : ''}`}
         onclick={`window.location.href='${projectUrl}'`}
       >
         {isCompact ? "Ansehen" : "Projekt ansehen"}
@@ -99,9 +99,10 @@ const isCompact = size === 'compact';
       {project.url && (
         <Button 
           variant="outline" 
-          size={isCompact ? "xs" : "sm"}
+          size="sm"
           onclick={`window.open('${project.url}', '_blank')`}
-          className={isCompact ? "flex-1" : ""}
+          className={`${isCompact ? 'flex-1 text-xs px-2 py-1' : ''}`}
+        >
         >
           <svg class={`w-3 h-3 ${isCompact ? '' : 'w-4 h-4 mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
