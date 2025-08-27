@@ -1,0 +1,100 @@
+{
+  "$schema": "./projects.schema.json",
+  "activeYear": 2025,
+  "workshops": {
+    "2025": {
+      "!": {
+        "displayName": "Die Neueröffnung der Athe Projektwoche 2025",
+        "site": "/data/prowo-site/2025.md"
+      },
+      "JULien-11": {
+        "displayName": "Julian",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "nachhaltigkeits-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      },
+      "mistermaximi": {
+        "displayName": "Emil",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "nachhaltigkeit-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      },
+      "Villaagerr": {
+        "displayName": "Paul",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "Nachhaltigkeits-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      },
+      "claaskolck": {
+        "displayName": "Claas",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "Nachhaltigkeits-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      },
+      "22toni": {
+        "displayName": "Toni",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "nachhaltigkeits-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      },
+      "nante0624-lgtm": {
+        "displayName": "Nante",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "nachhaltigkeits-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      },
+      "norwin707": {
+        "displayName": "Norwin",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "nachhaltigkeits-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      },
+      "SkibidiTheo69": {
+        "displayName": "Theo",
+        "projects": {
+          "personal-website": {
+            "name": "Persöhnliche Webseite"
+          },
+          "nachhaltigkeits-ideen": {
+            "name": "Nachhaltigkeits Ideen"
+          }
+        }
+      }
+    }
+  }
+}

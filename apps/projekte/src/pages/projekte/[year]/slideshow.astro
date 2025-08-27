@@ -1,0 +1,579 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getAvailableYears, getAllProjectsForYear, getWorkshopYear } from "~/lib/projects";
+
+const { year: yearString } = Astro.params;
+const year = parseInt(yearString || "", 10);
+
+// Validate year
+const availableYears = getAvailableYears();
+if (!availableYears.includes(year)) {
+  return Astro.redirect("/projekte");
+}
+
+// Get all projects for the year
+const allProjects = getAllProjectsForYear(year);
+const workshopYear = getWorkshopYear(year);
+const workshopTitle = workshopYear?.["!"]?.displayName || `Projektwoche ${year}`;
+
+// Build slides data with proper URLs
+const slides = allProjects.map(({ username, displayName, projectName, project }) => ({
+  title: project.name,
+  author: displayName,
+  url: `https://${username}.github.io/${projectName}`,
+  username,
+  projectName,
+}));
+
+// Shuffle the slides array for random order
+function shuffleArray(array: { title: string; author: string; url: string; username: string; projectName: string; }[]) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+const shuffledSlides = shuffleArray(slides);
+
+export async function getStaticPaths() {
+  const years = getAvailableYears();
+  return years.map(year => ({
+    params: { year: year.toString() }
+  }));
+}
+
+---
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slideshow - {workshopTitle}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slideshow-container {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+      transform: translateX(100%);
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .slide.leaving {
+      opacity: 0;
+      visibility: visible;
+      transform: translateX(-100%);
+    }
+
+    .slide.prev {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(-100%);
+    }
+
+    .slide-iframe {
+      width: 100%;
+      height: calc(100% - 80px);
+      border: none;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      transform: translateY(4rem);
+    }
+
+    .slide-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      color: white;
+      z-index: 10;
+    }
+
+    .slide-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slide-title {
+      font-size: 24px;
+      font-weight: 600;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .slide-author {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .controls {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px 25px;
+      border-radius: 50px;
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      height: 40px;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
+    .control-btn.active {
+      background: #4CAF50;
+      border-color: #4CAF50;
+    }
+
+    .speed-control {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 5px;
+      border-radius: 8px;
+    }
+
+    .speed-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      border-radius: 4px;
+      transition: background 0.3s ease;
+    }
+
+    .speed-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .speed-btn.active {
+      background: rgba(76, 175, 80, 0.5);
+    }
+
+    .progress-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      z-index: 101;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      width: 0;
+      transition: width linear;
+    }
+
+    .slide-counter {
+      color: white;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 5px 15px;
+      border-radius: 20px;
+    }
+
+    .nav-links {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .nav-link {
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-size: 14px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .error-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="slideshow-container" id="slideshow">
+    {shuffledSlides.map((slide, index) => (
+      <div class="slide" data-index={index}>
+        <div class="slide-header">
+          <div class="slide-info">
+            <div class="slide-title">{slide.title}</div>
+            <div class="slide-author">von {slide.author}</div>
+          </div>
+        </div>
+        <div class="loading-spinner"></div>
+        <iframe 
+          class="slide-iframe" 
+          data-src={slide.url}
+          title={slide.title}
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+        ></iframe>
+        <div class="error-message">
+          Projekt konnte nicht geladen werden
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div class="nav-links">
+    <a href={`/projekte/${year}`} class="nav-link">Alle Projekte {year}</a>
+    <a href="/projekte" class="nav-link">Zur Übersicht</a>
+  </div>
+
+  <div class="controls">
+    <button class="control-btn" id="prevBtn" title="Zurück">◀</button>
+    <button class="control-btn" id="playPauseBtn" title="Play/Pause">⏸</button>
+    <button class="control-btn" id="nextBtn" title="Weiter">▶</button>
+    <div class="speed-control">
+      <button class="speed-btn" data-speed="5">5s</button>
+      <button class="speed-btn" data-speed="10">10s</button>
+      <button class="speed-btn active" data-speed="15">15s</button>
+      <button class="speed-btn" data-speed="30">30s</button>
+    </div>
+    <div class="slide-counter">
+      <span id="currentSlide">1</span> / <span id="totalSlides">{shuffledSlides.length}</span>
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <script define:vars={{ slidesData: shuffledSlides }}>
+    const slides = document.querySelectorAll('.slide');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const currentSlideEl = document.getElementById('currentSlide');
+    const progressFill = document.getElementById('progressFill');
+    const speedBtns = document.querySelectorAll('.speed-btn');
+    
+    let currentSlide = 0;
+    let isPlaying = true;
+    let slideInterval = null;
+    let progressInterval = null;
+    let slideDuration = 15000; // 15 seconds default
+    let progress = 0;
+    
+    // Load iframe when slide becomes active
+    function loadIframe(slideElement) {
+      const iframe = slideElement.querySelector('.slide-iframe');
+      const spinner = slideElement.querySelector('.loading-spinner');
+      const errorMsg = slideElement.querySelector('.error-message');
+      
+      if (iframe && !iframe.src && iframe.dataset.src) {
+        spinner.style.display = 'block';
+        errorMsg.style.display = 'none';
+        
+        iframe.src = iframe.dataset.src;
+        
+        iframe.onload = () => {
+          spinner.style.display = 'none';
+        };
+        
+        iframe.onerror = () => {
+          spinner.style.display = 'none';
+          errorMsg.style.display = 'block';
+        };
+      }
+    }
+    
+    // Show specific slide
+    function showSlide(index, direction = 'next') {
+      // Find the currently active slide
+      const currentActiveSlide = document.querySelector('.slide.active');
+      const newSlide = slides[index];
+      
+      // Set up the new slide's entrance position
+      if (direction === 'next') {
+        newSlide.style.transform = 'translateX(100%)';
+      } else {
+        newSlide.style.transform = 'translateX(-100%)';
+      }
+      
+      slides.forEach((slide, i) => {
+        slide.classList.remove('active', 'leaving', 'prev');
+        
+        if (i === index) {
+          // New active slide - trigger entrance animation
+          setTimeout(() => {
+            slide.style.transform = 'translateX(0)';
+            slide.classList.add('active');
+          }, 10);
+          loadIframe(slide);
+        } else if (slide === currentActiveSlide && currentActiveSlide !== slides[index]) {
+          // The slide that was active is now leaving
+          slide.classList.add('leaving');
+        } else if (i < index) {
+          // All slides before the current one
+          slide.classList.add('prev');
+          slide.style.transform = 'translateX(-100%)';
+        } else {
+          // All slides after the current one
+          slide.style.transform = 'translateX(100%)';
+        }
+      });
+      
+      currentSlideEl.textContent = index + 1;
+      currentSlide = index;
+      resetProgress();
+    }
+    
+    // Next slide with animation direction
+    function nextSlide() {
+      const nextIndex = (currentSlide + 1) % slides.length;
+      showSlide(nextIndex, 'next');
+    }
+    
+    // Previous slide with animation direction
+    function prevSlide() {
+      const prevIndex = (currentSlide - 1 + slides.length) % slides.length;
+      showSlide(prevIndex, 'prev');
+    }
+    
+    // Progress bar
+    function resetProgress() {
+      progress = 0;
+      progressFill.style.transition = 'none';
+      progressFill.style.width = '0%';
+      
+      setTimeout(() => {
+        if (isPlaying) {
+          progressFill.style.transition = `width ${slideDuration}ms linear`;
+          progressFill.style.width = '100%';
+        }
+      }, 50);
+    }
+    
+    // Play/Pause functionality
+    function play() {
+      isPlaying = true;
+      playPauseBtn.innerHTML = '⏸';
+      playPauseBtn.classList.add('active');
+      
+      slideInterval = setInterval(nextSlide, slideDuration);
+      resetProgress();
+    }
+    
+    function pause() {
+      isPlaying = false;
+      playPauseBtn.innerHTML = '▶';
+      playPauseBtn.classList.remove('active');
+      
+      clearInterval(slideInterval);
+      progressFill.style.transition = 'none';
+      
+      // Calculate and freeze progress
+      const computedStyle = window.getComputedStyle(progressFill);
+      const currentWidth = computedStyle.width;
+      progressFill.style.width = currentWidth;
+    }
+    
+    // Event listeners
+    playPauseBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        pause();
+      } else {
+        play();
+      }
+    });
+    
+    nextBtn.addEventListener('click', () => {
+      nextSlide();
+      if (isPlaying) {
+        clearInterval(slideInterval);
+        play();
+      }
+    });
+    
+    prevBtn.addEventListener('click', () => {
+      prevSlide();
+      if (isPlaying) {
+        clearInterval(slideInterval);
+        play();
+      }
+    });
+    
+    // Speed controls
+    speedBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        speedBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        slideDuration = parseInt(btn.dataset.speed) * 1000;
+        
+        if (isPlaying) {
+          clearInterval(slideInterval);
+          play();
+        }
+      });
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      switch(e.key) {
+        case 'ArrowRight':
+          nextSlide();
+          if (isPlaying) {
+            clearInterval(slideInterval);
+            play();
+          }
+          break;
+        case 'ArrowLeft':
+          prevSlide();
+          if (isPlaying) {
+            clearInterval(slideInterval);
+            play();
+          }
+          break;
+        case ' ':
+          e.preventDefault();
+          if (isPlaying) {
+            pause();
+          } else {
+            play();
+          }
+          break;
+        case 'Escape':
+          window.location.href = `/projekte/${new Date().getFullYear()}`;
+          break;
+      }
+    });
+    
+    // Initialize
+    showSlide(0, 'next');
+    play();
+    
+    // Preload next slides
+    function preloadNextSlides() {
+      const nextIndex = (currentSlide + 1) % slides.length;
+      const nextNextIndex = (currentSlide + 2) % slides.length;
+      
+      [nextIndex, nextNextIndex].forEach(index => {
+        const slide = slides[index];
+        if (slide) {
+          const iframe = slide.querySelector('.slide-iframe');
+          if (iframe && !iframe.src && iframe.dataset.src) {
+            // Preload in background
+            setTimeout(() => {
+              if (!iframe.src) {
+                iframe.src = iframe.dataset.src;
+              }
+            }, 2000);
+          }
+        }
+      });
+    }
+    
+    // Start preloading after first slide loads
+    setTimeout(preloadNextSlides, 3000);
+  </script>
+</body>
+</html>

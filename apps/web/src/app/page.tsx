@@ -1,3 +1,3 @@
-import Maintenance from "prowo-ui/maintenance";
+import Root from "prowo-ui/pages/root";
 
-export default Maintenance;
+export default Root;

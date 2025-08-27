@@ -1,0 +1,102 @@
+---
+import Layout from "~/layouts/Layout.astro";
+import ProjectCard from "~/components/ProjectCard.astro";
+import { buttonVariants } from "prowo-ui/ui/button";
+import { cn } from "prowo-ui/lib/utils"
+import { getParticipant, getProjects, getPreviewImageUrl, getAvailableYears, getParticipants, getWorkshopYear } from "~/lib/projects";
+
+export async function getStaticPaths() {
+  const years = getAvailableYears();
+  const paths: Array<{ params: { year: string; participant: string } }> = [];
+  
+  years.forEach(year => {
+    const participants = getParticipants(year);
+    participants.forEach(({ username }) => {
+      paths.push({
+        params: { year: year.toString(), participant: username }
+      });
+    });
+  });
+  
+  return paths;
+}
+
+const { year, participant } = Astro.params;
+const yearNum = parseInt(year as string, 10);
+
+const participantData = getParticipant(yearNum, participant as string);
+const projects = getProjects(yearNum, participant as string);
+const workshopMeta = getWorkshopYear(yearNum)?.['!'];
+
+if (!participantData) {
+  return Astro.redirect('/projekte');
+}
+---
+
+<Layout>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h1 class="ledger-regular text-3xl md:text-4xl font-bold mb-2">
+            Projekte by {participantData.displayName}
+          </h1>
+          {workshopMeta && (
+            <p class="text-lg text-muted-foreground">
+              {workshopMeta.displayName}
+            </p>
+          )}
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4 text-sm text-muted-foreground">
+        <span>{projects.length} {projects.length === 1 ? 'Projekt' : 'Projekte'}</span>
+        <span>Jahr: {yearNum}</span>
+      </div>
+    </div>
+
+    {projects.length === 0 ? (
+      <div class="text-center py-12">
+        <h2 class="text-xl font-semibold mb-2">Keine Projekte gefunden</h2>
+        <p class="text-muted-foreground">
+          {participantData.displayName} hat in {yearNum} keine Projekte hochgeladen.
+        </p>
+      </div>
+    ) : (
+      <>
+        {/* Projects Grid */}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {projects.map(({ projectName, project }) => {
+            return (
+              <ProjectCard
+                username={participant as string}
+                displayName={participantData.displayName}
+                projectName={projectName}
+                project={project}
+                year={yearNum}
+                previewImageUrl={getPreviewImageUrl(yearNum, participant as string, projectName)}
+              />
+            );
+          })}
+        </div>
+      </>
+    )}
+
+    <!-- Navigation -->
+    <div class="mt-12 pt-8 border-t border-border flex justify-between">
+      <a
+        class={cn(buttonVariants({ variant: "outline" }))}
+        href={`/projekte/${yearNum}`}
+      >
+        ← Alle Projekte {yearNum}
+      </a>
+      <a
+        class={cn(buttonVariants({ variant: "outline" }))}
+        href="/projekte"
+      >
+        Alle Jahre
+      </a>
+    </div>
+  </div>
+</Layout>

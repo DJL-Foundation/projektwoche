@@ -34,7 +34,7 @@ COPY . .
 RUN cargo build --release --manifest-path rust/projektwoche-setup/Cargo.toml
 
 # Make the binary accessible in PATH
-ENV PATH="/app/rust/projektwoche-setup/target/release:${PATH}"
+ENV PATH="/app/target/release:${PATH}"
 
 # Set the default command to run installation and verification
 CMD ["sh", "-c", "projektwoche-setup install projektwoche && bun scripts/setup-tests.ts projektwoche"]

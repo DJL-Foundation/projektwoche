@@ -77,8 +77,12 @@ export default defineConfig({
       tailwindcss(),
       // @ts-ignore
       devtoolsJson(),
+      // @ts-ignore
       tsconfigPaths(),
     ],
+    ssr: {
+      external: ["@sparticuz/chromium", "puppeteer-core"],
+    },
   },
   adapter: vercel(),
 });
