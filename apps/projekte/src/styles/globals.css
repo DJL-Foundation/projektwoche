@@ -1,5 +1,4 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Ledger&display=swap");
-@import "prowo-ui/globals.css";
 @import "tailwindcss";
 @import "../../../../packages/ui/dist/styles/globals.css";
 

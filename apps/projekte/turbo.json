@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["prowo-ui#build"],
+      "inputs": ["../../projects.json"],
       "outputs": [".vercel/output/**"]
     }
   }
