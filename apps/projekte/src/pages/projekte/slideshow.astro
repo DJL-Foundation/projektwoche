@@ -1,0 +1,7 @@
+---
+import { getActiveYear } from "~/lib/projects";
+
+const activeYear = getActiveYear();
+
+return Astro.redirect(`/projekte/${activeYear}/slideshow`);
+---
