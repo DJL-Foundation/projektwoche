@@ -2,10 +2,8 @@
   "extends": ["//"],
   "tasks": {
     "build": {
+      "inputs": ["../../projects.json"],
       "outputs": [".next/**", "!.next/cache/**"]
-    },
-    "chill-build": {
-      "dependsOn": ["lint"]
     }
   }
 }

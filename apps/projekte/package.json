@@ -15,7 +15,8 @@
   "dependencies": {
     "@astrojs/mdx": "4.3.4",
     "@astrojs/react": "^4.3.0",
-    "puppeteer": "^24.17.0",
+    "puppeteer-core": "^24.17.0",
+    "@sparticuz/chromium": "^138.0.2",
     "@astrojs/sitemap": "3.5.1",
     "@astrojs/ts-plugin": "^1.10.4",
     "@astrojs/vercel": "8.2.6",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
+    "puppeteer": "^24.17.0",
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/parser": "^8.39.0",
     "cross-env": "^7.0.3",

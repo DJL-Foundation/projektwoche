@@ -80,6 +80,9 @@ export default defineConfig({
       // @ts-ignore
       tsconfigPaths(),
     ],
+    ssr: {
+      external: ["@sparticuz/chromium", "puppeteer-core"],
+    },
   },
   adapter: vercel(),
 });

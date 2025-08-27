@@ -71,7 +71,7 @@
     "zod": "4.0.17",
     "tailwindcss": "4.1.11",
     "tw-animate-css": "1.3.6",
-    "postcss": "8.4.21",
+    "postcss": "8.4.31",
     "@tailwindcss/postcss": "^4.1.11"
   },
   "devDependencies": {

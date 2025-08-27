@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import puppeteer from "puppeteer";
+import type { Browser, LaunchOptions } from "puppeteer-core";
 import {
   getProjectUrl,
   getAvailableYears,
@@ -7,9 +7,14 @@ import {
   getProjects,
 } from "~/lib/projects";
 
+interface PuppeteerModule {
+  launch(options?: LaunchOptions): Promise<Browser>;
+}
+
 // Simple semaphore to limit concurrent puppeteer instances
 let activeBrowsers = 0;
 const MAX_CONCURRENT_BROWSERS = 1;
+const isVercel = !!process.env.VERCEL_ENV;
 
 const waitForSlot = async (): Promise<void> => {
   while (activeBrowsers >= MAX_CONCURRENT_BROWSERS) {
@@ -30,8 +35,8 @@ export const GET: APIRoute = async ({ params, redirect }) => {
     return redirect("/logo.png", 302);
   }
 
-  let browser;
-  let projectUrl;
+  let browser: Browser | undefined;
+  let projectUrl = "";
   try {
     // Wait for a browser slot to be available
     await waitForSlot();
@@ -39,27 +44,32 @@ export const GET: APIRoute = async ({ params, redirect }) => {
     // Generate screenshot dynamically using puppeteer
     projectUrl = getProjectUrl(parseInt(year, 10), username, project);
 
-    browser = await puppeteer.launch({
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-web-security",
-        "--single-process",
-        "--no-zygote",
-        "--disable-gpu",
-        "--disable-software-rasterizer",
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-        "--disable-features=TranslateUI",
-        "--disable-ipc-flooding-protection",
-      ],
-      headless: true,
-      executablePath: process.env.CHROME_BIN || undefined,
-      timeout: 30000,
-      protocolTimeout: 30000,
-    });
+    // Dynamically import puppeteer based on environment
+    let puppeteer: PuppeteerModule;
+    let launchOptions: LaunchOptions;
+
+    if (isVercel) {
+      const chromium = (await import("@sparticuz/chromium")).default;
+      puppeteer = (await import(
+        "puppeteer-core"
+      )) as unknown as PuppeteerModule;
+      launchOptions = {
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: true,
+        timeout: 30000,
+        protocolTimeout: 30000,
+      };
+    } else {
+      puppeteer = (await import("puppeteer")) as unknown as PuppeteerModule;
+      launchOptions = {
+        headless: true,
+        timeout: 30000,
+        protocolTimeout: 30000,
+      };
+    }
+
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 800 });
@@ -92,7 +102,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
   } catch (error) {
     console.error(
       `Failed to generate screenshot for ${projectUrl || "unknown"}:`,
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
     );
     // Fallback to logo on any error (including Chrome dependency issues)
     return redirect("/logo.png", 302);
