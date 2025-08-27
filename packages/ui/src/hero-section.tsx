@@ -52,6 +52,16 @@ export function HeroSection() {
               className="bg-transparent px-8 py-6 text-lg"
               asChild
             >
+              <Link href="/projekte/slideshow" prefetch>
+                ▶ Slideshow
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="bg-transparent px-8 py-6 text-lg"
+              asChild
+            >
               <Link href="/about" prefetch>
                 Über das Projekt
               </Link>

@@ -45,16 +45,25 @@ const activeYear = getActiveYear();
         {/* Right section - Workshop navigation */}
         <div class="flex justify-end-safe items-center space-x-2">
           {latestWorkshops.map(({ year, displayName }) => (
-            <a
-              href={`/projekte/${year}`}
-              class={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 ${
-                year === activeYear 
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                  : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
-              }`}
-            >
-              {year}
-            </a>
+            <div class="flex items-center space-x-1">
+              <a
+                href={`/projekte/${year}`}
+                class={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 ${
+                  year === activeYear 
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                    : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                }`}
+              >
+                {year}
+              </a>
+              <a
+                href={`/projekte/${year}/slideshow`}
+                class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-2 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                title={`Slideshow ${year}`}
+              >
+                ▶
+              </a>
+            </div>
           ))}
         </div>
       </div>

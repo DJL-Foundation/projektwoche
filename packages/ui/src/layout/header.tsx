@@ -108,18 +108,28 @@ export default function Header({
               {/* Right section - Workshop navigation */}
               <div className="flex items-center justify-end space-x-2">
                 {latestWorkshops.map(({ year, displayName: _displayName }) => (
-                  <Button
-                    key={year}
-                    variant={
-                      year === (projectsData as ProjectsData).activeYear
-                        ? "default"
-                        : "outline"
-                    }
-                    asChild
-                    size="sm"
-                  >
-                    <Link href={`/projekte/${year}`}>{year}</Link>
-                  </Button>
+                  <div key={year} className="flex items-center space-x-1">
+                    <Button
+                      variant={
+                        year === (projectsData as ProjectsData).activeYear
+                          ? "default"
+                          : "outline"
+                      }
+                      asChild
+                      size="sm"
+                    >
+                      <Link href={`/projekte/${year}`}>{year}</Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      asChild
+                      size="sm"
+                      className="px-2"
+                      title={`Slideshow ${year}`}
+                    >
+                      <Link href={`/projekte/${year}/slideshow`}>▶</Link>
+                    </Button>
+                  </div>
                 ))}
                 <ThemeToggle />
               </div>

@@ -63,6 +63,12 @@ const workshopMeta = workshopYear['!'];
       <div class="flex items-center gap-4 text-sm text-muted-foreground">
         <span>{allProjects.length} Projekte</span>
         <span>{new Set(allProjects.map(p => p.username)).size} Teilnehmer</span>
+        <a 
+          class={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          href={`/projekte/${yearNum}/slideshow`}
+        >
+          ▶ Slideshow
+        </a>
       </div>
     </div>
 

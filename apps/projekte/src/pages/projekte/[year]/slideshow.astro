@@ -25,6 +25,18 @@ const slides = allProjects.map(({ username, displayName, projectName, project })
   projectName,
 }));
 
+// Shuffle the slides array for random order
+function shuffleArray(array: { title: string; author: string; url: string; username: string; projectName: string; }[]) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+const shuffledSlides = shuffleArray(slides);
+
 export async function getStaticPaths() {
   const years = getAvailableYears();
   return years.map(year => ({
@@ -80,7 +92,15 @@ export async function getStaticPaths() {
       transform: translateX(0);
     }
 
+    .slide.leaving {
+      opacity: 0;
+      visibility: visible;
+      transform: translateX(-100%);
+    }
+
     .slide.prev {
+      opacity: 0;
+      visibility: hidden;
       transform: translateX(-100%);
     }
 
@@ -91,6 +111,7 @@ export async function getStaticPaths() {
       background: white;
       border-radius: 8px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      transform: translateY(4rem);
     }
 
     .slide-header {
@@ -278,7 +299,7 @@ export async function getStaticPaths() {
 </head>
 <body>
   <div class="slideshow-container" id="slideshow">
-    {slides.map((slide, index) => (
+    {shuffledSlides.map((slide, index) => (
       <div class="slide" data-index={index}>
         <div class="slide-header">
           <div class="slide-info">
@@ -317,7 +338,7 @@ export async function getStaticPaths() {
       <button class="speed-btn" data-speed="30">30s</button>
     </div>
     <div class="slide-counter">
-      <span id="currentSlide">1</span> / <span id="totalSlides">{slides.length}</span>
+      <span id="currentSlide">1</span> / <span id="totalSlides">{shuffledSlides.length}</span>
     </div>
   </div>
 
@@ -325,7 +346,7 @@ export async function getStaticPaths() {
     <div class="progress-fill" id="progressFill"></div>
   </div>
 
-  <script define:vars={{ slidesData: slides }}>
+  <script define:vars={{ slidesData: shuffledSlides }}>
     const slides = document.querySelectorAll('.slide');
     const playPauseBtn = document.getElementById('playPauseBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -365,14 +386,38 @@ export async function getStaticPaths() {
     }
     
     // Show specific slide
-    function showSlide(index) {
+    function showSlide(index, direction = 'next') {
+      // Find the currently active slide
+      const currentActiveSlide = document.querySelector('.slide.active');
+      const newSlide = slides[index];
+      
+      // Set up the new slide's entrance position
+      if (direction === 'next') {
+        newSlide.style.transform = 'translateX(100%)';
+      } else {
+        newSlide.style.transform = 'translateX(-100%)';
+      }
+      
       slides.forEach((slide, i) => {
-        slide.classList.remove('active', 'prev');
+        slide.classList.remove('active', 'leaving', 'prev');
+        
         if (i === index) {
-          slide.classList.add('active');
+          // New active slide - trigger entrance animation
+          setTimeout(() => {
+            slide.style.transform = 'translateX(0)';
+            slide.classList.add('active');
+          }, 10);
           loadIframe(slide);
+        } else if (slide === currentActiveSlide && currentActiveSlide !== slides[index]) {
+          // The slide that was active is now leaving
+          slide.classList.add('leaving');
         } else if (i < index) {
+          // All slides before the current one
           slide.classList.add('prev');
+          slide.style.transform = 'translateX(-100%)';
+        } else {
+          // All slides after the current one
+          slide.style.transform = 'translateX(100%)';
         }
       });
       
@@ -381,16 +426,16 @@ export async function getStaticPaths() {
       resetProgress();
     }
     
-    // Next slide
+    // Next slide with animation direction
     function nextSlide() {
-      currentSlide = (currentSlide + 1) % slides.length;
-      showSlide(currentSlide);
+      const nextIndex = (currentSlide + 1) % slides.length;
+      showSlide(nextIndex, 'next');
     }
     
-    // Previous slide
+    // Previous slide with animation direction
     function prevSlide() {
-      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-      showSlide(currentSlide);
+      const prevIndex = (currentSlide - 1 + slides.length) % slides.length;
+      showSlide(prevIndex, 'prev');
     }
     
     // Progress bar
@@ -503,7 +548,7 @@ export async function getStaticPaths() {
     });
     
     // Initialize
-    showSlide(0);
+    showSlide(0, 'next');
     play();
     
     // Preload next slides
