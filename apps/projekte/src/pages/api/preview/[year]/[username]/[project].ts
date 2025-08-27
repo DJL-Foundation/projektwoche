@@ -81,7 +81,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
     });
 
     // Wait for page to fully load
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const screenshotBuffer = await page.screenshot({
       type: "png",
@@ -102,7 +102,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
   } catch (error) {
     console.error(
       `Failed to generate screenshot for ${projectUrl || "unknown"}:`,
-      error instanceof Error ? error.message : error,
+      error instanceof Error ? error.message : error
     );
     // Fallback to logo on any error (including Chrome dependency issues)
     return redirect("/logo.png", 302);
