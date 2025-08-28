@@ -9,6 +9,8 @@
 - [ ] Implement html hosting for the projects
 - [ ] Intelligent routing for the projects
 - [ ] Page for the Team (/team)
+- [ ] Donation Page
+- [ ] Analytics on all sites
 
 ### prowo-cli (TS / Rust) (idk yet)
 
