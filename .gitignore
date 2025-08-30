@@ -407,5 +407,9 @@ target
 
 # --- ---
 
+# Lockfiles - auto-generated, should not be committed by agents
+bun.lock
+Cargo.lock
+
 # Turborepo
 .turbo
