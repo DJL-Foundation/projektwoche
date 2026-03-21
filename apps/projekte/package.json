@@ -24,7 +24,7 @@
     "@vercel/microfrontends": "^2.0.0",
     "@vercel/og": "^0.8.5",
     "@vercel/toolbar": "^0.1.38",
-    "astro": "5.13.3",
+    "astro": "5.15.9",
     "prowo-ui": "workspace:*",
     "prowo-wind": "workspace:*",
     "react": "^18.2.0",
