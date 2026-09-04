@@ -1,8 +1,8 @@
 ---
 import "~/styles/globals.css"
-import PostHog from '../components/posthog.astro';
 import Header from "../components/header.astro";
 import Footer from "../components/footer.astro";
+import { ArchiveNotice } from "prowo-ui/archive-notice";
 
 export interface Props {
   baseHref?: string;
@@ -22,7 +22,6 @@ const dev = !import.meta.env.PROD
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<meta name="generator" content={Astro.generator} />
 		<title>Projekte der Schüler von Nachhaltige Webentwicklung - Hackclub Stade</title>
-    <PostHog />
 		<script>
 			// Apply dark mode class based on localStorage
 			try {
@@ -34,6 +33,7 @@ const dev = !import.meta.env.PROD
 	</head>
 	<body class="min-h-screen geist-500">
 		<Header beta={dev} baseHref={baseHref} />
+    <ArchiveNotice />
     <main class="min-h-[70vh]">
       <slot />
     </main>

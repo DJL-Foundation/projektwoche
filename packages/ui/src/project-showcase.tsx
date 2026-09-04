@@ -44,7 +44,7 @@ export function ProjectShowcase({ projects }: ProjectShowcaseProps) {
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = `/placeholder.svg?height=400&width=600&query=Webseite Screenshot für ${project.projectTitle}`;
+                    target.src = "/archive-project.svg";
                   }}
                 />
               </div>

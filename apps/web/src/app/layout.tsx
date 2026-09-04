@@ -1,27 +1,14 @@
 import "./globals.css";
 
 import { GeistSans } from "geist/font/sans";
-import { Ledger } from "next/font/google";
 import type React from "react";
 import type { Metadata } from "next";
 import { ThemeProvider } from "prowo-ui/theme-provider";
-
-import { TRPCReactProvider } from "~/trpc/react";
-import { BotIdClient } from "botid/client";
-
-import { PostHogProvider } from "~/server/providers";
-import env from "~/env";
 import LayoutContent from "prowo-ui/layout-content";
-import { devModeFlag } from "#flags";
-
-const ledger = Ledger({
-  subsets: ["latin"],
-  weight: ["400"],
-});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(env.HOST_URL || "https://prowo.hackclub-stade.de"),
-  title: "Nachhaltige Webentwicklung - Hackclub Stade",
+  metadataBase: new URL("https://prowo.hackclub-stade.de"),
+  title: "Nachhaltige Webentwicklung – Archiv",
   description:
     "Hackclub Stade hostet das Projekt 'Nachhaltige Webentwicklung' bei der Projektwoche des Gymnasium Athenaeum Stade. Lerne Webentwicklung und nachhaltige IT.",
   icons: {
@@ -103,44 +90,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const beta = env.NODE_ENV === "development";
-  const shouldShowVercelToolbar = await devModeFlag();
-
   return (
     <html lang="de" suppressHydrationWarning>
-      <body className={`${GeistSans.variable} ${ledger.className} antialiased`}>
-        <TRPCReactProvider>
-          <BotIdClient
-            protect={[
-              {
-                path: "/api/trpc/*",
-                method: "GET",
-              },
-              {
-                path: "/api/trpc/*",
-                method: "POST",
-              },
-            ]}
-          />
-          <PostHogProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <LayoutContent
-                shouldShowVercelToolbar={shouldShowVercelToolbar}
-                beta={beta}
-              >
-                {children}
-              </LayoutContent>
-            </ThemeProvider>
-          </PostHogProvider>
-        </TRPCReactProvider>
+      <body className={`${GeistSans.variable} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LayoutContent shouldShowVercelToolbar={false} beta={false}>
+            {children}
+          </LayoutContent>
+        </ThemeProvider>
       </body>
     </html>
   );

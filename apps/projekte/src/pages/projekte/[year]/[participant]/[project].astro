@@ -87,7 +87,7 @@ const projectUrl = getProjectUrl(yearNum, participant as string, project as stri
       }
       
       .header-overlay {
-        top: 0;
+        top: 42px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
       
@@ -157,9 +157,20 @@ const projectUrl = getProjectUrl(yearNum, participant as string, project as stri
         top: 0;
         left: 0;
         right: 0;
-        height: 60px;
+        height: 102px;
         z-index: 999;
         background: transparent;
+      }
+
+      .archive-note {
+        position: fixed;
+        inset: 0 0 auto;
+        z-index: 1001;
+        padding: 0.7rem 1rem;
+        background: #78350f;
+        color: #fef3c7;
+        text-align: center;
+        font: 600 0.85rem/1.4 system-ui, sans-serif;
       }
       
       #mouse-detector-bottom {
@@ -174,6 +185,9 @@ const projectUrl = getProjectUrl(yearNum, participant as string, project as stri
     </style>
   </head>
   <body>
+    <div class="archive-note">
+      Archivierte Demo · Diese externe Schülerwebsite kann inzwischen offline sein.
+    </div>
     <!-- Mouse Detection Areas -->
     <div id="mouse-detector"></div>
     <div id="mouse-detector-bottom"></div>
@@ -200,7 +214,7 @@ const projectUrl = getProjectUrl(yearNum, participant as string, project as stri
     <div class="overlay footer-overlay" id="footer-overlay">
       <div class="overlay-content">
         <div class="project-info">
-          <p>Hosting bereitgestellt von Hackclub Stade</p>
+          <p>Historische Projektansicht · externes Hosting wird nicht mehr garantiert</p>
         </div>
         <div class="controls">
           <a href={`/projekte/${yearNum}`} class="btn">
