@@ -7,6 +7,7 @@ import { VercelToolbar } from "@vercel/toolbar/next";
 import Header from "./layout/header";
 import Footer from "./layout/footer";
 import { Toaster } from "./ui/sonner";
+import { ArchiveNotice } from "./archive-notice";
 
 interface LayoutContentProps {
   children: React.ReactNode;
@@ -45,16 +46,16 @@ export default function LayoutContent({
         originalThemeRef.current = theme;
         setIsPrintMode(true);
         setTheme("light");
-        
+
         // Create one-time print completion handler
         const onAfterPrint = () => {
           setIsPrintMode(false);
           setTheme(originalThemeRef.current ?? "system");
           window.removeEventListener("afterprint", onAfterPrint);
         };
-        
+
         window.addEventListener("afterprint", onAfterPrint);
-        
+
         setTimeout(() => {
           console.log("Print styles applied");
           window.print();
@@ -78,6 +79,7 @@ export default function LayoutContent({
       <Toaster />
       <div className="min-h-screen flex flex-col bg-background text-foreground">
         <Header print={isPrintMode} beta={beta} />
+        <ArchiveNotice />
         <main className="grow">{children}</main>
         <Footer print={isPrintMode} beta={beta} />
       </div>

@@ -3,6 +3,7 @@ import { ProjectShowcase } from "../project-showcase";
 import { SustainabilitySection } from "../sustainability-section";
 import { Separator } from "../ui/separator";
 import projectsData from "../../../../projects.json";
+import { ArchiveOverview } from "../archive-overview";
 
 interface Project {
   name: string;
@@ -32,8 +33,8 @@ interface ProjectsData {
   workshops: Record<string, YearData>;
 }
 
-// Function to get random student projects
-function getRandomProjects(count = 2) {
+// Keep the archive landing page stable rather than changing examples per render.
+function getFeaturedProjects(count = 2) {
   const year = projectsData.activeYear;
   const students = Object.entries(
     (projectsData.workshops as Record<string, YearData>)[year.toString()] ?? {},
@@ -61,22 +62,21 @@ function getRandomProjects(count = 2) {
     })),
   );
 
-  // Shuffle and return random projects
-  const shuffled = allProjects.sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
+  return allProjects.slice(0, count);
 }
 
 export default function HomePage() {
-  const randomProjects = getRandomProjects(2);
+  const featuredProjects = getFeaturedProjects(2);
 
   return (
     <main className="min-h-screen">
       <div className="to-background from-secondary/75 bg-radial-[at_100%_100%]">
         <HeroSection />
         <Separator />
-        <ProjectShowcase projects={randomProjects} />
+        <ProjectShowcase projects={featuredProjects} />
       </div>
       <SustainabilitySection />
+      <ArchiveOverview />
     </main>
   );
 }

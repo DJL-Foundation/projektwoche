@@ -8,6 +8,21 @@
   </p>
 </div>
 
+> [!IMPORTANT]
+> **Status: Archived.** This repository preserves the 2025 project-week
+> interface and student-project catalogue for documentation and historical
+> purposes. The original Vercel microfrontend deployment, dynamic browser
+> previews, tRPC endpoint, bot protection, feature flags, and PostHog analytics
+> are no longer treated as live services. External student sites may also be
+> offline; the UI uses an explicit archived-demo fallback instead.
+
+| Archive metadata | Value      |
+| ---------------- | ---------- |
+| Status           | Archived   |
+| Original period  | 2025       |
+| Source           | GitHub     |
+| Maintainer       | Jack Ruder |
+
 <br/>
 
 <div align="center">

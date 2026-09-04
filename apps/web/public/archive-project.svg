@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Archivierte Projektansicht</title>
+  <desc id="desc">Neutraler Platzhalter für eine nicht mehr erreichbare Schülerwebsite.</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff7ed"/><stop offset="1" stop-color="#fef2f2"/></linearGradient></defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <rect x="170" y="130" width="860" height="540" rx="24" fill="#fff" stroke="#fb923c" stroke-width="3"/>
+  <circle cx="220" cy="180" r="10" fill="#ec3750"/><circle cx="250" cy="180" r="10" fill="#f59e0b"/><circle cx="280" cy="180" r="10" fill="#84cc16"/>
+  <path d="M510 310h180v150H510z M545 310v-35a55 55 0 0 1 110 0v35" fill="none" stroke="#ec3750" stroke-width="18" stroke-linejoin="round"/>
+  <text x="600" y="535" text-anchor="middle" font-family="system-ui,sans-serif" font-size="34" font-weight="700" fill="#292524">Archivierte Demo</text>
+  <text x="600" y="580" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" fill="#78716c">Die ursprüngliche Website ist möglicherweise offline.</text>
+</svg>
